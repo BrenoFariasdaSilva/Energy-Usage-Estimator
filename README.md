@@ -31,7 +31,7 @@ Project-Description.
 
 <div align="center">
   
-![RepoBeats Statistics](https://repobeats.axiom.co/api/embed/c36c20e25527ac26cdc37e52e5e2335a58f758c8.svg "Repobeats analytics image")
+![RepoBeats Statistics](https://repobeats.axiom.co/api/embed/2a14dabe65b2dc85fb2636c1752979b5a37f10b9.svg "Repobeats analytics image")
 
 </div>
 
