@@ -44,3 +44,34 @@ def _id(value: object, label: str) -> str:
         return str(UUID(value))
     except ValueError as exc:
         raise ValueError(f"{label} precisa ser um UUID.") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class Device:
+    """Reusable electrical appliance, with nominal power while active."""
+
+    id: str
+    name: str
+    category: str
+    watts: float
+    standby_watts: float = 0.0
+    notes: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "id", _id(self.id, "ID do aparelho"))
+        object.__setattr__(self, "name", _text(self.name, "Nome"))
+        object.__setattr__(self, "category", _text(self.category, "Categoria"))
+        _number(self.watts, "Potência (W)", minimum=0.001, maximum=1_000_000)
+        _number(self.standby_watts, "Potência em espera (W)")
+        object.__setattr__(self, "notes", _text(self.notes, "Observações", max_length=500, required=False))
+
+    @classmethod
+    def from_dict(cls, data: object) -> Device:
+        """Validate and parse one device from persisted JSON."""
+        if not isinstance(data, dict):
+            raise ValueError("Aparelho deve ser um objeto JSON.")
+        return cls(**{key: data[key] for key in ("id", "name", "category", "watts", "standby_watts", "notes") if key in data})
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the device into a JSON-compatible dictionary."""
+        return asdict(self)
