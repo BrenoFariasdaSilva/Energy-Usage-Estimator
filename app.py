@@ -78,3 +78,65 @@ def header(title: str, subtitle: str) -> None:
 def device_label(device: Device) -> str:
     """Describe a device in selection controls."""
     return f"{device.name} · {format_number(device.watts, 0)} W"
+
+
+def copel_pdf_import() -> None:
+    """Preview a supported Copel PDF, then apply its parsed rate only after confirmation."""
+    with st.expander("Importar fatura da Copel (PDF)", expanded=False):
+        st.caption(
+            "Suportado: faturas **DANF3E da Copel Distribuição S.A.** em PDF com texto selecionável, "
+            "conforme o modelo NF3e testado (até 6 páginas, 10 MB). "
+            "Outras distribuidoras, modelos desconhecidos, digitalizações e PDFs com senha não são suportados."
+        )
+        upload = st.file_uploader("Selecione a fatura original da Copel", type=["pdf"], key="copel_pdf_upload")
+        if upload is None:
+            return
+        try:
+            parsed: CopelBill = parse_copel_pdf(upload.getvalue())
+        except BillImportError as exc:
+            st.error(str(exc))
+            st.info("A importação não alterou a tarifa salva. Use a entrada manual abaixo se necessário.")
+            return
+
+        st.success("Fatura DANF3E da Copel reconhecida. Confira os valores antes de aplicar.")
+        a, b, c = st.columns(3)
+        a.metric("Referência", parsed.reference or "Não identificada")
+        b.metric("Consumo faturado", f"{format_number(float(parsed.billed_kwh), 2)} kWh")
+        c.metric("Total a pagar", format_brl(float(parsed.total_brl)))
+        st.write(f"**Método utilizado:** {parsed.method_label}")
+        st.metric("Tarifa calculada", f"R$ {format_number(float(parsed.rate_brl_kwh), 6)}/kWh")
+        if parsed.energy_unit_price is not None:
+            st.write(f"Preço de energia (com tributos): R$ {format_number(float(parsed.energy_unit_price), 6)}/kWh")
+        if parsed.distribution_unit_price is not None:
+            st.write(f"Preço de distribuição (com tributos): R$ {format_number(float(parsed.distribution_unit_price), 6)}/kWh")
+        if parsed.public_lighting_brl is not None:
+            st.write(f"Iluminação pública na fatura: {format_brl(float(parsed.public_lighting_brl))}")
+        if parsed.method == "full_bill_average":
+            st.warning(
+                "Os dois preços unitários (energia + distribuição) não puderam ser validados. "
+                "Foi aplicada a média da fatura completa: total a pagar ÷ kWh, "
+                "que pode incluir iluminação pública e outros encargos."
+            )
+        else:
+            st.caption(
+                "Tarifa composta pelos preços unitários COM tributos de energia e distribuição. "
+                "O total da conta e o consumo também foram extraídos; iluminação pública não entra na tarifa."
+            )
+        st.caption("O PDF é processado localmente em memória e não é gravado no diretório de dados.")
+        if st.button("Aplicar tarifa extraída", type="primary", key="apply_copel_bill"):
+            mode = "direct" if parsed.method == "component_prices" else "bill"
+            tariff = Tariff(
+                mode=mode,
+                direct_rate=float(parsed.rate_brl_kwh) if mode == "direct" else TARIFF.direct_rate,
+                bill_amount=float(parsed.total_brl),
+                bill_kwh=float(parsed.billed_kwh),
+                source="copel_pdf",
+                bill_reference=parsed.reference or "",
+            )
+
+            def persist() -> None:
+                STORE.save_tariff(tariff)
+                # The radio has not been instantiated on this run yet.
+                st.session_state["tariff_mode_choice"] = mode
+
+            save_or_warn(persist, "Tarifa da fatura Copel salva localmente. Os cenários foram recalculados.")
