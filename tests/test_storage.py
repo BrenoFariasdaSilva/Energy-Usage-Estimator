@@ -76,3 +76,26 @@ def test_corrupted_json_never_overwritten(tmp_path: Path, fan: Device) -> None:
     with pytest.raises(StorageError):
         store.upsert_device(fan)
     assert path.read_text(encoding="utf-8") == "{ invalid"
+
+
+def test_wrong_schema_never_silently_reset(tmp_path: Path) -> None:
+    """Unknown schema versions are rejected instead of silently erased."""
+    (tmp_path / "settings.json").write_text('{"schema_version": 2, "tariff": {}}')
+    with pytest.raises(StorageError, match="incompatível"):
+        JsonStore(tmp_path).load_tariff()
+
+
+def test_export_import_with_previous_backup(tmp_path: Path, fan: Device, fan_scenario: Scenario) -> None:
+    """A full JSON export restores every collection and leaves an automatic safety copy."""
+    original = JsonStore(tmp_path / "original")
+    original.upsert_device(fan)
+    original.upsert_scenario(fan_scenario)
+    original.save_tariff(Tariff("bill", 0.85, 300, 250))
+    exported = original.backup_bytes()
+    assert b"energy-usage-estimator" in exported
+    restored = JsonStore(tmp_path / "restored")
+    restored.save_tariff(Tariff(direct_rate=0.4))
+    previous = restored.restore_backup(exported)
+    assert previous.exists()
+    assert json.loads(previous.read_bytes())["tariff"]["direct_rate"] == 0.4
+    assert restored.load_all() == original.load_all()
