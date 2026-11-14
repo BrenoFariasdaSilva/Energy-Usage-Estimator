@@ -104,6 +104,50 @@ The project uses **Python 3.11 or newer**. Its launchers create the virtual envi
 
 The startup script creates `.venv/` if needed, installs the dependencies when the requirements change, and launches Streamlit bound to **127.0.0.1** (only the local computer). The terminal should remain open while using the app; close it or press `Ctrl+C` to stop the server.
 
+## Run Python Code:
+
+To launch the dashboard using the Makefile:
+
+```bash
+make run
+```
+
+If a terminal is preferred:
+
+**Windows PowerShell:**
+
+```powershell
+py -3 scripts/launcher.py run
+```
+
+**macOS/Linux:**
+
+```bash
+python3 scripts/launcher.py run
+```
+
+The browser normally opens at `http://localhost:8501`. If the port is already occupied, Streamlit may choose another one; use the URL printed in the terminal.
+
+### Dependencies
+
+1. To install the application dependencies without opening the dashboard, run:
+
+   ```bash
+   make install
+   ```
+
+2. Without GNU Make, use the Python launcher (`py -3` on Windows or `python3` on macOS/Linux):
+
+   ```powershell
+   py -3 scripts/launcher.py install
+   ```
+
+   ```bash
+   python3 scripts/launcher.py install
+   ```
+
+   The launcher creates `.venv/` and only reinstalls dependencies when the requirements change.
+
 ## License
 
 ### Apache License 2.0
