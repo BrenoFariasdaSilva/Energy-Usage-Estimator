@@ -90,6 +90,20 @@ The interface is in **Brazilian Portuguese (pt-BR)**, values use **R$** and deci
 
 Alternatively, download and extract the source ZIP into any folder. Do **not** extract to a protected system folder such as `C:\Program Files`.
 
+## Installation:
+
+The project uses **Python 3.11 or newer**. Its launchers create the virtual environment and install the required packages automatically on first run. No manual `pip install` is necessary.
+
+### Easiest way
+
+| Operating system | Action |
+|---|---|
+| Windows 10/11 | Double-click `start_windows.bat`. |
+| macOS | Double-click `start_macos.command`, or run `sh start_macos.command` from Terminal if execution is restricted. |
+| Linux | Run `sh start_linux.sh`. |
+
+The startup script creates `.venv/` if needed, installs the dependencies when the requirements change, and launches Streamlit bound to **127.0.0.1** (only the local computer). The terminal should remain open while using the app; close it or press `Ctrl+C` to stop the server.
+
 ## License
 
 ### Apache License 2.0
