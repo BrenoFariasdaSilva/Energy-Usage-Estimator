@@ -1,0 +1,94 @@
+%PDF-1.3
+%“Œ‹ž ReportLab Generated PDF document (opensource)
+1 0 obj
+<<
+/F1 2 0 R /F2 3 0 R
+>>
+endobj
+2 0 obj
+<<
+/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+>>
+endobj
+3 0 obj
+<<
+/BaseFont /Courier /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+>>
+endobj
+4 0 obj
+<<
+/Contents 8 0 R /MediaBox [ 0 0 595.2756 841.8898 ] /Parent 7 0 R /Resources <<
+/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>> /Rotate 0 /Trans <<
+
+>> 
+  /Type /Page
+>>
+endobj
+5 0 obj
+<<
+/PageMode /UseNone /Pages 7 0 R /Type /Catalog
+>>
+endobj
+6 0 obj
+<<
+/Author (anonymous) /CreationDate (D:20000101000000+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20000101000000+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
+  /Subject (unspecified) /Title (Synthetic Copel DANF3E parser fixture - not an actual bill) /Trapped /False
+>>
+endobj
+7 0 obj
+<<
+/Count 1 /Kids [ 4 0 R ] /Type /Pages
+>>
+endobj
+8 0 obj
+<<
+/Length 1011
+>>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 800 Tm (DANF3E - DOCUMENTO AUXILIAR DA NOTA FISCAL ELETRONICA DE ENERGIA ELETRICA) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 762 Tm (Copel Distribuicao S.A.) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 724 Tm (CNPJ 04.368.898/0001-06) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 686 Tm (01/2026 12/02/2026 R$120,00) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 648 Tm (ENERGIA ELET CONSUMO                kWh       100      0,350000      35,00) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 610 Tm (ENERGIA ELET USO SISTEMA           kWh       100      0,650000      65,00) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 572 Tm (CONT ILUMIN PUBLICA MUNICIPIO      UN                 20,000000     20,00) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 534 Tm (TOTAL                              120,00     6,20       18,00) Tj T* ET
+BT /F2 8 Tf 9.6 TL ET
+BT 1 0 0 1 20 496 Tm (0001234567      CONSUMO kWh TP 1000 1100 1 100) Tj T* ET
+ 
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000061 00000 n 
+0000000102 00000 n 
+0000000209 00000 n 
+0000000314 00000 n 
+0000000517 00000 n 
+0000000585 00000 n 
+0000000896 00000 n 
+0000000955 00000 n 
+trailer
+<<
+/ID 
+[<ee23395edf35944bc65511f706b3b674><ee23395edf35944bc65511f706b3b674>]
+% ReportLab generated PDF document -- digest (opensource)
+
+/Info 6 0 R
+/Root 5 0 R
+/Size 9
+>>
+startxref
+2017
+%%EOF
