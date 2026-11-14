@@ -277,6 +277,26 @@ Data belongs to the machine running Streamlit, **not browser storage**. The appl
 
 The light/dark switch uses application CSS; some native Streamlit components may retain their own appearance.
 
+## How to Cite?
+
+If you use the Energy-Usage-Estimator in your research, please cite it using the following BibTeX entry:
+
+```
+@misc{softwareEnergy-Usage-Estimator:2026,
+  title = {Energy-Usage-Estimator: Local-first electricity cost simulator · Python + Streamlit + Plotly},
+  author = {Breno Farias da Silva},
+  year = {2026},
+  howpublished = {https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator},
+  note = {Accessed on November 14, 2026}
+}
+```
+
+You can copy this BibTeX entry into your bibliography file. The source ZIP does not include a separate `main.bib` file.
+
+If you find this repository valuable, please don't forget to give it a ⭐ to show your support! Contributions are highly encouraged, whether by creating issues for feedback or submitting pull requests (PRs) to improve the project. For details on how to contribute, please refer to the [Contributing](#contributing) section below.
+
+Thank you for your support and for recognizing the contribution of this tool to your work!
+
 ## License
 
 ### Apache License 2.0
