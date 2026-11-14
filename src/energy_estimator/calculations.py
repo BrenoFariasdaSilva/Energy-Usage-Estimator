@@ -45,3 +45,10 @@ def energy_kwh(watts: float, hours: float, *, quantity: int = 1, duty_cycle: flo
         raise ValueError("Quantidade precisa ser um número inteiro.")
     _number(duty_cycle, "Ciclo", maximum=1)
     return watts * hours * quantity * duty_cycle / 1000
+
+
+def cost_for_hours(device: Device, hours: float, rate: float, *, quantity: int = 1, duty_cycle: float = 1.0) -> tuple[float, float]:
+    """Return kWh and cost for continuous scheduled hours, excluding standby."""
+    _number(rate, "Tarifa (R$/kWh)", maximum=1000)
+    kwh = energy_kwh(device.watts, hours, quantity=quantity, duty_cycle=duty_cycle)
+    return kwh, kwh * rate
