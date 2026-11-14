@@ -204,3 +204,5 @@ Magnet\ Links\ from\ URL/*.csv
 **/Output/**
 
 !**/requirements.txt
+
+readme_sections_committer.py

@@ -8,7 +8,9 @@
   
 ---
 
-Project-Description.
+**Local-first electricity cost simulator · Python + Streamlit + Plotly · v1.2.0**
+
+Estimate how much your computer, fan, shower, air conditioner, lights, or other appliances cost to run. Save your own appliance catalog and reusable usage scenarios as local JSON files.
   
 ---
 
