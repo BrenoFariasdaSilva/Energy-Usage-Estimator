@@ -104,3 +104,49 @@ def _component(text: str, name: str) -> _Component | None:
     matches = [_Component(*(_decimal(value) for value in match.groups())) for match in pattern.finditer(text)]
     # A duplicated identical row could denote a second charge. Do not use it.
     return matches[0] if len(matches) == 1 else None
+
+
+def _total(text: str) -> Decimal | None:
+    """Find the grand total, cross-checking it against a reference-month summary if present."""
+    # Restrict to the item-table grand total, not an arbitrary tax base or barcode amount.
+    grand_candidates = [
+        _decimal(match.group(1)) for match in re.finditer(rf"^\s*TOTAL\s+({_MONEY})(?=\s|$)", text, re.M)
+    ]
+    summaries = [
+        _decimal(match.group(1)) for match in re.finditer(
+            rf"^\s*\d{{2}}/\d{{4}}\s+\d{{2}}/\d{{2}}/\d{{4}}\s+R\$\s*({_MONEY})(?=\s|$)", text, re.M
+        )
+    ]
+    if len(set(grand_candidates)) > 1 or len(set(summaries)) > 1:
+        raise BillImportError("Há valores totais contraditórios no PDF. Confira a fatura manualmente.")
+    grand = _unique(grand_candidates)
+    summary = _unique(summaries)
+    if grand is not None and summary is not None and abs(grand - summary) > Decimal("0.01"):
+        raise BillImportError("O total da tabela e o total do cabeçalho divergem. Confira a fatura manualmente.")
+    return grand if grand is not None else summary
+
+
+def _meter_kwh(text: str) -> Decimal | None:
+    """Read billed kWh in the metering row, never the multi-month history chart."""
+    values = []
+    for line in text.splitlines():
+        # The reference Copel layout: CONSUMO kWh TP [previous] [current] [multiplier] [billed].
+        match = re.search(
+            rf"^\s*\d{{5,}}\s+CONSUMO\s+KWH\s+\w+\s+({_NUM})\s+({_NUM})\s+({_NUM})\s+({_NUM})(?=\s|$)",
+            line,
+        )
+        if match:
+            values.append(_decimal(match.group(4)))
+    if len(set(values)) > 1:
+        raise BillImportError("Há consumos medidos contraditórios no PDF. Confira a fatura manualmente.")
+    return _unique(values)
+
+
+def _public_lighting(text: str) -> Decimal | None:
+    values = []
+    for match in re.finditer(
+        rf"^\s*CONT\s+ILUMIN\s+PUBLICA\s+MUNICIPIO\s+UN\s+{_NUM}\s+({_MONEY})(?=\s|$)",
+        text, re.M,
+    ):
+        values.append(_decimal(match.group(1)))
+    return _unique(values)
