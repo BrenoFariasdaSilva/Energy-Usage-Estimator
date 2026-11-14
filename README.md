@@ -148,6 +148,39 @@ The browser normally opens at `http://localhost:8501`. If the port is already oc
 
    The launcher creates `.venv/` and only reinstalls dependencies when the requirements change.
 
+### CLI and developer verification
+
+Run one calculation without the web UI (installed dependencies are not needed for this command):
+
+```bash
+python main.py estimate --watts 300 --hours 8 --rate 1.0 --quantity 1 --load 100
+```
+
+Run diagnostics and print saved scenario totals:
+
+```bash
+python main.py diagnostics
+python main.py scenarios
+```
+
+Launch developer tests with the provided bootstrap (this installs dev dependencies once):
+
+```bash
+python scripts/launcher.py test
+```
+
+Or, if `pytest`, `pandas` and `plotly` are already installed:
+
+```bash
+python -m pytest -q
+```
+
+For source linting after installing `ruff`:
+
+```bash
+python -m ruff check .
+```
+
 ## License
 
 ### Apache License 2.0
