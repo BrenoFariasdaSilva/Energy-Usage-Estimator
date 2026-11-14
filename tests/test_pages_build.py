@@ -76,7 +76,7 @@ class GitHubPagesBuildTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {"ENERGY_ESTIMATOR_DATA_DIR": "/tmp/my-eue"}), mock.patch.object(
             storage, "is_browser_runtime", return_value=True
         ):
-            self.assertEqual(storage.data_directory(project), Path("/tmp/my-eue"))
+            self.assertEqual(storage.data_directory(project), Path("/tmp/my-eue").resolve())
 
     def test_native_fsync_is_kept_and_browser_safely_flushes(self) -> None:
         class Handle:
