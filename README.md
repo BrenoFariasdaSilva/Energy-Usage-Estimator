@@ -132,15 +132,15 @@ Discuss the results obtained in the project.
 
 ## How to Cite?
 
-If you use the Repository-Name in your research, please cite it using the following BibTeX entry:
+If you use the Energy-Usage-Estimator in your research, please cite it using the following BibTeX entry:
 
 ```
-@misc{softwareRepository-Name:2024,
-  title = {Repository-Name: Project-Description},
+@misc{softwareEnergy-Usage-Estimator:2026,
+  title = {Energy-Usage-Estimator: Local-first electricity cost simulator · Python + Streamlit + Plotly},
   author = {Breno Farias da Silva},
-  year = {2024},
-  howpublished = {https://github.com/BrenoFariasdaSilva/Repository-Name},
-  note = {Accessed on September 11, 2024}
+  year = {2026},
+  howpublished = {https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator},
+  note = {Accessed on November 14, 2026}
 }
 ```
 
