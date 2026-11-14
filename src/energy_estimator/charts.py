@@ -62,3 +62,12 @@ def scenario_comparison(rows: list[dict[str, float | str]]) -> go.Figure:
                  color_discrete_sequence=PALETTE)
     fig.update_layout(showlegend=False)
     return _polish(fig, title="Comparação de cenários — custo por 30 dias")
+
+
+def cost_by_duration(device_rows: list[dict[str, float | str]]) -> go.Figure:
+    """Compare continuous-use cost across devices for a selected duration."""
+    df = pd.DataFrame(device_rows).sort_values("Custo (R$)", ascending=False)
+    fig = px.bar(df, x="Aparelho", y="Custo (R$)", color="Aparelho",
+                 color_discrete_sequence=PALETTE)
+    fig.update_layout(showlegend=False)
+    return _polish(fig, title="Comparação por tempo de uso")
