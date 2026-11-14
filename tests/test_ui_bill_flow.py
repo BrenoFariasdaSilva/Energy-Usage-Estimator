@@ -163,3 +163,43 @@ def test_empty_store_all_pages_render_without_missing_api(monkeypatch, tmp_path,
     fake = show_page(monkeypatch, tmp_path, page=page)
     assert not [message for kind, message in fake.messages if kind == "error"]
     assert JsonStore(tmp_path).load_tariff().rate == 1.0
+
+
+def test_bill_upload_previews_without_automatic_save(monkeypatch, tmp_path) -> None:
+    raw = (ROOT / "tests/fixtures/copel-danf3e-synthetic.pdf").read_bytes()
+    fake = show_page(monkeypatch, tmp_path, upload=raw)
+    assert any("Copel reconhecida" in message for kind, message in fake.messages if kind == "success")
+    assert ("Tarifa calculada", "R$ 1,000000/kWh") in fake.metrics
+    assert not (tmp_path / "settings.json").exists()
+
+
+def test_explicit_apply_pdf_updates_settings(monkeypatch, tmp_path) -> None:
+    raw = (ROOT / "tests/fixtures/copel-danf3e-synthetic.pdf").read_bytes()
+    with pytest.raises(RerunRequested):
+        show_page(monkeypatch, tmp_path, upload=raw, apply=True)
+    tariff = JsonStore(tmp_path).load_tariff()
+    assert tariff == Tariff(
+        "direct", 1.0, 120.0, 100.0, source="copel_pdf", bill_reference="01/2026"
+    )
+
+
+def test_fallback_apply_saves_bill_mode_and_average(monkeypatch, tmp_path) -> None:
+    raw = (ROOT / "tests/fixtures/copel-danf3e-fallback-synthetic.pdf").read_bytes()
+    with pytest.raises(RerunRequested):
+        show_page(monkeypatch, tmp_path, upload=raw, apply=True)
+    tariff = JsonStore(tmp_path).load_tariff()
+    assert tariff.source == "copel_pdf"
+    assert tariff.mode == "bill"
+    assert tariff.bill_reference == "12/2026"
+    assert tariff.bill_kwh == 200
+    assert tariff.bill_amount == 300
+    assert tariff.rate == 1.5
+
+
+def test_non_copel_pdf_rejected_without_changing_settings(monkeypatch, tmp_path) -> None:
+    raw = (ROOT / "tests/fixtures/copel-danf3e-synthetic.pdf").read_bytes()
+    # Parseable PDF with valid bytes but extracted issuer replaced using the parser's own text path
+    # is tested in test_bill_import. Here the UI validates the rejection and no-write flow.
+    fake = show_page(monkeypatch, tmp_path, upload=b"%PDF-1.7\ninvalid", apply=True)
+    assert any(kind == "error" for kind, _ in fake.messages)
+    assert not (tmp_path / "settings.json").exists()
