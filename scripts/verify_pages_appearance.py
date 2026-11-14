@@ -3,6 +3,7 @@
 The fixture recreates the DOM elements that were affected by the screenshots, and
 forces the original native dark background so the CSS must actually override it.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -18,7 +19,7 @@ SITE = ROOT / "dist"
 
 
 def rgb(hexcolor):
-    return tuple(int(hexcolor[i:i+2], 16) for i in (1,3,5))
+    return tuple(int(hexcolor[i : i + 2], 16) for i in (1, 3, 5))
 
 
 def color(css):
@@ -26,7 +27,7 @@ def color(css):
 
 
 def fixture():
-    return '''<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/></head><body>
+    return """<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/></head><body>
     <main id="root"><section data-testid="stApp" style="background:#1b1d1d">
       <div data-testid="stAppViewContainer"><div data-testid="stMain" style="background:#1b1d1d">
       <div data-testid="stMainBlockContainer" style="background:#1b1d1d">
@@ -75,103 +76,139 @@ def fixture():
         document.querySelector('#nav').append(button);
       }
     </script>
-    </body></html>'''
+    </body></html>"""
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--screenshots', type=Path)
+    parser.add_argument("--screenshots", type=Path)
+    parser.add_argument(
+        "--chromium",
+        type=Path,
+        help="Optional Chromium executable; Playwright's managed Chromium is the default.",
+    )
     args = parser.parse_args()
-    script = (ROOT / 'pages/appearance.js').read_bytes()
-    url = 'data:text/javascript;base64,' + base64.b64encode(script).decode()
-    assert (SITE / 'app-theme.css').exists(), 'Run build_pages.py first'
+    script = (ROOT / "pages/appearance.js").read_bytes()
+    url = "data:text/javascript;base64," + base64.b64encode(script).decode()
+    assert (SITE / "app-theme.css").exists(), "Run build_pages.py first"
     snapshots = []
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox'])
+        launch_options = {"headless": True}
+        if args.chromium is not None:
+            launch_options["executable_path"] = str(args.chromium)
+        browser = pw.chromium.launch(**launch_options)
         try:
-            page = browser.new_page(viewport={'width':1550,'height':1020})
+            page = browser.new_page(viewport={"width": 1550, "height": 1020})
             page.set_content(fixture())
-            page.add_style_tag(path=str(SITE / 'app-theme.css'))
-            page.evaluate('''async (url) => {
+            page.add_style_tag(path=str(SITE / "app-theme.css"))
+            page.evaluate(
+                """async (url) => {
               const module = await import(url);
               window.eueSync = module.startAppearanceSync(document, document.getElementById('root'));
               window.eueDetect = module.detectAppearance;
-            }''', url)
-            for current in ('light', 'dark', 'light'):
-                if current == 'dark':
-                    page.locator('#dark-btn').click()
+            }""",
+                url,
+            )
+            for current in ("light", "dark", "light"):
+                if current == "dark":
+                    page.locator("#dark-btn").click()
                 elif len(snapshots) > 0:
-                    page.locator('#light-btn').click()
-                page.evaluate('''theme => {
+                    page.locator("#light-btn").click()
+                page.evaluate(
+                    """theme => {
                     const isLight = theme === 'light';
                     document.querySelector('#light-btn').setAttribute('aria-pressed',String(isLight));
                     document.querySelector('#dark-btn').setAttribute('aria-pressed',String(!isLight));
                     document.querySelector('#eue-active-theme').dataset.theme=theme;
-                }''', current)
-                page.wait_for_function('''theme => document.documentElement.dataset.eueTheme===theme''', arg=current)
+                }""",
+                    current,
+                )
+                page.wait_for_function("""theme => document.documentElement.dataset.eueTheme===theme""", arg=current)
                 expected = {
-                    'light': dict(bg='#F5F9FE', sidebar='#EAF2FB', text='#14283D', surface='#FFFFFF', uploader='#EFF6FF'),
-                    'dark': dict(bg='#0B121C', sidebar='#121E2C', text='#F1F7FF', surface='#142333', uploader='#1B3045'),
+                    "light": dict(
+                        bg="#F5F9FE", sidebar="#EAF2FB", text="#14283D", surface="#FFFFFF", uploader="#EFF6FF"
+                    ),
+                    "dark": dict(
+                        bg="#0B121C", sidebar="#121E2C", text="#F1F7FF", surface="#142333", uploader="#1B3045"
+                    ),
                 }[current]
                 selectors = {
-                    'bg':'body',
-                    'sidebar':'[data-testid="stSidebar"]',
-                    'surface':'.metrics [data-testid="stMetric"]',
-                    'uploader':'[data-testid="stFileUploaderDropzone"]',
+                    "bg": "body",
+                    "sidebar": '[data-testid="stSidebar"]',
+                    "surface": '.metrics [data-testid="stMetric"]',
+                    "uploader": '[data-testid="stFileUploaderDropzone"]',
                 }
                 for token, selector in selectors.items():
-                    found = color(page.locator(selector).first.evaluate('(e)=>getComputedStyle(e).backgroundColor'))
-                    assert found == rgb(expected[token]), (current,token,found,expected[token])
-                for label,selector in {
-                    'input':'#rate',
-                    'filename':'[data-testid="stFileUploaderFileName"]',
-                    'icon':'[data-testid="stFileUploaderFileIcon"] svg path',
+                    found = color(page.locator(selector).first.evaluate("(e)=>getComputedStyle(e).backgroundColor"))
+                    assert found == rgb(expected[token]), (current, token, found, expected[token])
+                for label, selector in {
+                    "input": "#rate",
+                    "filename": '[data-testid="stFileUploaderFileName"]',
+                    "icon": '[data-testid="stFileUploaderFileIcon"] svg path',
                 }.items():
                     found = color(page.locator(selector).first.evaluate('(e) => getComputedStyle(e)["color"]'))
                     # The actual icon's primary paint uses currentColor.
-                    assert (label == 'icon' or found == rgb(expected['text'])), (current,label,found)
-                inp=page.locator('#rate')
-                assert color(inp.evaluate('(e)=>getComputedStyle(e).backgroundColor'))==rgb(expected['surface'])
-                assert color(inp.evaluate('(e)=>getComputedStyle(e).color'))==rgb(expected['text'])
-                assert color(page.locator('[data-testid="stFileUploaderFileName"]').evaluate('(e)=>getComputedStyle(e).color'))==rgb(expected['text'])
-                assert color(page.locator('[data-testid="stFileUploaderFileIcon"]').evaluate('(e)=>getComputedStyle(e).backgroundColor'))==rgb('#14283D' if current=='light' else '#243F59')
-                for nav in ['Início','Aparelhos','Calculadora','Cenários','Comparações','Dados e backups']:
-                    page.get_by_role('button',name=nav,exact=True).click()
-                    assert page.locator('#section-title').inner_text()==nav
-                    assert color(page.locator('body').evaluate('(e)=>getComputedStyle(e).backgroundColor'))==rgb(expected['bg'])
+                    assert label == "icon" or found == rgb(expected["text"]), (current, label, found)
+                inp = page.locator("#rate")
+                assert color(inp.evaluate("(e)=>getComputedStyle(e).backgroundColor")) == rgb(expected["surface"])
+                assert color(inp.evaluate("(e)=>getComputedStyle(e).color")) == rgb(expected["text"])
+                assert color(
+                    page.locator('[data-testid="stFileUploaderFileName"]').evaluate("(e)=>getComputedStyle(e).color")
+                ) == rgb(expected["text"])
+                assert color(
+                    page.locator('[data-testid="stFileUploaderFileIcon"]').evaluate(
+                        "(e)=>getComputedStyle(e).backgroundColor"
+                    )
+                ) == rgb("#14283D" if current == "light" else "#243F59")
+                for nav in ["Início", "Aparelhos", "Calculadora", "Cenários", "Comparações", "Dados e backups"]:
+                    page.get_by_role("button", name=nav, exact=True).click()
+                    assert page.locator("#section-title").inner_text() == nav
+                    assert color(page.locator("body").evaluate("(e)=>getComputedStyle(e).backgroundColor")) == rgb(
+                        expected["bg"]
+                    )
                 if args.screenshots:
-                    args.screenshots.mkdir(parents=True,exist_ok=True)
-                    f=args.screenshots/f'pages-theme-{current}.png'
-                    page.get_by_role('button',name='Início',exact=True).click()
-                    page.screenshot(path=str(f),full_page=True)
+                    args.screenshots.mkdir(parents=True, exist_ok=True)
+                    f = args.screenshots / f"pages-theme-{current}.png"
+                    page.get_by_role("button", name="Início", exact=True).click()
+                    page.screenshot(path=str(f), full_page=True)
                 snapshots.append(current)
             # Earlier Streamlit releases mark the active button with a distinct
             # data-testid instead of aria-pressed; the visible selection must win
             # even when the Python marker still refers to the previous theme.
-            page.evaluate('''() => {
+            page.evaluate("""() => {
                 const light=document.querySelector('#light-btn');
                 const dark=document.querySelector('#dark-btn');
                 light.removeAttribute('aria-pressed'); dark.removeAttribute('aria-pressed');
                 dark.setAttribute('data-testid','stBaseButton-segmented_controlActive');
                 document.querySelector('#eue-active-theme').dataset.theme='light';
-            }''')
+            }""")
             page.wait_for_function("document.documentElement.dataset.eueTheme === 'dark'")
-            page.evaluate('''() => {
+            page.evaluate("""() => {
                 const light=document.querySelector('#light-btn');
                 const dark=document.querySelector('#dark-btn');
                 dark.removeAttribute('data-testid');
                 light.setAttribute('data-testid','stBaseButton-segmented_controlActive');
-            }''')
+            }""")
             page.wait_for_function("document.documentElement.dataset.eueTheme === 'light'")
             # Real-world fallback: the widget and marker are temporarily removed
             # while React rerenders. Keep current root palette, not native dark.
-            page.evaluate('''() => {document.querySelector('[data-testid="stSegmentedControl"]').remove();
-                    document.querySelector('#eue-active-theme').remove();}''')
-            assert page.evaluate('document.documentElement.dataset.eueTheme') == 'light'
+            page.evaluate("""() => {document.querySelector('[data-testid="stSegmentedControl"]').remove();
+                    document.querySelector('#eue-active-theme').remove();}""")
+            assert page.evaluate("document.documentElement.dataset.eueTheme") == "light"
         finally:
             browser.close()
-    print(json.dumps({'result':'PASS','kind':'Pages generated CSS + real browser JS, simulated Streamlit DOM',
-        'sequences':snapshots,'pages_checked':6},ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "result": "PASS",
+                "kind": "Pages generated CSS + real browser JS, simulated Streamlit DOM",
+                "sequences": snapshots,
+                "pages_checked": 6,
+            },
+            ensure_ascii=False,
+        )
+    )
 
-if __name__=='__main__':
+
+if __name__ == "__main__":
     main()
