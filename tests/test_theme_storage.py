@@ -153,3 +153,134 @@ def test_restore_partial_write_rolls_back_theme(tmp_path: Path, monkeypatch) -> 
         store.restore_backup(json.dumps(incoming).encode("utf-8"))
     assert store.load_theme() == "dark"
     assert store.load_tariff().rate == 0.7
+
+
+def test_css_palette_has_all_expected_colors() -> None:
+    for name, colors in THEMES.items():
+        css = theme_css(name)
+        assert css.startswith("<style>") and '</style><span id="eue-active-theme"' in css
+        assert f'data-theme="{name}"' in css
+        for value in (colors.background, colors.sidebar, colors.surface, colors.text, colors.accent):
+            assert value in css
+    assert theme_css("light") != theme_css("dark")
+    with pytest.raises(ValueError):
+        theme_css("unknown")
+
+
+def test_chart_theme_does_not_mutate_input_figure() -> None:
+    import plotly.graph_objects as go
+
+    fig = go.Figure(data=[go.Bar(x=["A", "B"], y=[4, 1])])
+    light = style_chart(fig, "light")
+    dark = style_chart(fig, "dark")
+    assert light.layout.paper_bgcolor == THEMES["light"].surface
+    assert dark.layout.paper_bgcolor == THEMES["dark"].surface
+    assert fig.layout.paper_bgcolor is None
+    assert light is not dark and dark is not fig
+    with pytest.raises(ValueError):
+        style_chart(fig, "unknown")
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_sidebar_tariff_resizes_without_ellipsis(theme: str) -> None:
+    css = theme_css(theme)
+    assert '[data-testid="stSidebar"] [data-testid="stMetric"]' in css
+    assert 'container-type: inline-size' in css
+    assert 'font-size: clamp(.65rem, 10cqi, 1.5rem)' in css
+    assert 'text-overflow: clip !important' in css
+    assert 'white-space: nowrap' in css
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_native_streamlit_widgets_use_matching_theme_contrast(theme: str) -> None:
+    css = theme_css(theme)
+    colors = THEMES[theme]
+    assert '[data-testid="stAlert"]' in css
+    assert '[data-testid="stExpander"] summary' in css
+    assert '[data-testid="stFileUploader"] section' in css
+    assert f'--eue-surface-alt: {colors.surface_alt};' in css
+    assert f'--eue-text: {colors.text};' in css
+    assert f'--eue-border: {colors.border};' in css
+    assert 'background: var(--eue-surface-alt) !important;' in css
+    assert 'color: var(--eue-text) !important;' in css
+
+
+def test_both_themes_use_blue_accents() -> None:
+    for theme in THEMES.values():
+        r, g, b = (int(theme.accent[i:i+2], 16) for i in (1, 3, 5))
+        assert b > r and b >= g
+
+@pytest.mark.parametrize("name", ["light", "dark"])
+def test_theme_switch_updates_main_and_sidebar_surfaces(name: str) -> None:
+    css = theme_css(name)
+    colors = THEMES[name]
+    assert f"--eue-background: {colors.background};" in css
+    assert f"--eue-surface: {colors.surface};" in css
+    assert '--background-color: var(--eue-background);' in css
+    assert '[data-testid="stMain"] > div' in css
+    assert '[data-testid="stAppViewContainer"] > section' in css
+    assert '[data-testid="stSidebar"] > div' in css
+    assert "background-color: var(--eue-sidebar) !important" in css
+    assert f'data-theme="{name}"' in css
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_uploaded_file_and_alert_text_contrast_regression(theme: str) -> None:
+    css = theme_css(theme)
+    assert '[data-testid="stFileUploaderFile"] svg' in css
+    assert '[data-testid="stAlert"] p' in css
+    assert '[data-testid="stAlert"] > div' in css
+    # Never overwrite a native filled-file glyph with line-only stroke rules.
+    assert 'stroke: currentColor;' not in css
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_uploaded_file_name_and_icon_have_explicit_contrast(theme: str) -> None:
+    css = theme_css(theme)
+    assert '[data-testid="stFileUploaderFileName"]' in css
+    assert '[data-testid="stFileUploaderFileSize"]' in css
+    assert '[data-testid="stFileUploaderFileIcon"] svg' in css
+    assert 'background-color: var(--eue-icon-bg) !important' in css
+    assert 'color: var(--eue-icon-fg) !important' in css
+    assert '[data-testid="stFileUploaderFileData"]' in css
+    assert '[data-testid="stNumberInput"] input' in css
+    assert 'background-color: transparent !important' in css
+
+
+def test_theme_css_rules_stay_constant_across_appearance_changes() -> None:
+    """Regression: switching one stylesheet for another caused stale CSS."""
+    light = theme_css("light")
+    dark = theme_css("dark")
+    assert light.split('</style>')[0] == dark.split('</style>')[0]
+    assert 'data-theme="light"' in light
+    assert 'data-theme="dark"' in dark
+    assert ':root:has(#eue-active-theme[data-theme="dark"])' in dark
+    assert 'background: var(--eue-background) !important' in light
+    assert 'data-testid="stFileUploaderFileIcon"] > div' not in light
+
+
+def test_number_input_has_matching_background_foreground_and_caret() -> None:
+    """The outer BaseWeb div alone cannot recolor the editable HTML input."""
+    css = theme_css("dark")
+    selector = '[data-testid="stApp"] [data-testid="stNumberInput"] input'
+    assert selector in css
+    rule = css[css.index(selector):]
+    assert 'background-color: var(--eue-surface) !important;' in rule.split('}', 1)[0]
+    assert '-webkit-text-fill-color: var(--eue-text) !important;' in rule
+    assert 'caret-color: var(--eue-text) !important;' in rule
+
+
+def test_filename_container_cannot_retain_native_light_background() -> None:
+    """Streamlit's inner file-details chip must not stay white in dark mode."""
+    css = theme_css("dark")
+    assert '[data-testid="stFileUploaderFileData"]' in css
+    assert 'background-color: transparent !important;' in css
+    assert ':not([data-testid="stFileUploaderFileIcon"] *)' in css
+    assert '[data-testid="stFileUploaderFileName"]' in css
+
+
+def test_native_document_icon_is_not_forced_to_stroke_only() -> None:
+    """Filled and stroked Streamlit document glyphs both remain visible."""
+    css = theme_css("light")
+    assert '[data-testid="stFileUploaderFileIcon"] svg *' in css
+    assert 'color: var(--eue-icon-fg) !important;' in css
+    assert 'fill: none;' not in css
+    assert 'stroke: currentColor;' not in css
