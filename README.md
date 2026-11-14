@@ -2,6 +2,8 @@
   
 # [Energy-Usage-Estimator.](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator) <img src="https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/blob/d4173c3b2249a77b6b1a223b86e801ea2042eddc/.assets/Icons/GitHub%20Colored%20Icon.svg"  width="3%" height="3%">
 
+<p><strong>Live demo:</strong> <a href="https://brenofariasdasilva.github.io/Energy-Usage-Estimator/">brenofariasdasilva.github.io/Energy-Usage-Estimator</a></p>
+
 </div>
 
 <div align="center">
