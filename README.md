@@ -217,6 +217,10 @@ For a demo, import `examples/backup-demo.json`. **Warning:** Importing replaces 
 - **Preferred tariff:** R$ 1.026488/kWh.
 - **Full-bill average:** R$ 192.72 ÷ 168 = R$ 1.147143/kWh.
 
+### Worked example
+
+A 60 W fan running 8 hours/day at R$ 1.00/kWh consumes **0.48 kWh/day**, costing **R$ 0.48/day** or approximately **R$ 14.40 over 30 days**.
+
 ## License
 
 ### Apache License 2.0
