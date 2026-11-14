@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "energy-usage-estimator"
+version = "1.2.0"
+description = "Local-first Streamlit energy usage and bill cost estimator with saved JSON scenarios"
+requires-python = ">=3.11"
+authors = [{name = "Energy Usage Estimator Contributors"}]
+dependencies = ["streamlit>=1.49,<2", "pandas>=2.2,<3", "plotly>=6,<7", "pypdf>=5.9,<7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 119
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
