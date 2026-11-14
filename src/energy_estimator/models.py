@@ -75,3 +75,37 @@ class Device:
     def to_dict(self) -> dict[str, object]:
         """Serialize the device into a JSON-compatible dictionary."""
         return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class UsageItem:
+    """Usage schedule of one device inside a scenario."""
+
+    device_id: str
+    hours_per_day: float
+    days_per_week: int = 7
+    quantity: int = 1
+    duty_cycle: float = 1.0
+    include_standby: bool = False
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "device_id", _id(self.device_id, "ID do aparelho"))
+        _number(self.hours_per_day, "Horas de uso por dia", maximum=24)
+        _integer(self.days_per_week, "Dias por semana", minimum=1, maximum=7)
+        _integer(self.quantity, "Quantidade", minimum=1, maximum=1000)
+        _number(self.duty_cycle, "Ciclo de funcionamento", maximum=1)
+        if not isinstance(self.include_standby, bool):
+            raise ValueError("Incluir consumo em espera deve ser verdadeiro ou falso.")
+
+    @classmethod
+    def from_dict(cls, data: object) -> UsageItem:
+        """Validate and parse one usage schedule from JSON."""
+        if not isinstance(data, dict):
+            raise ValueError("Item do cenário deve ser um objeto JSON.")
+        return cls(**{key: data[key] for key in (
+            "device_id", "hours_per_day", "days_per_week", "quantity", "duty_cycle", "include_standby"
+        ) if key in data})
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize a usage schedule."""
+        return asdict(self)
