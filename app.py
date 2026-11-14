@@ -274,3 +274,67 @@ def dashboard_page() -> None:
                      "R$ / 30 dias": round(summary["monthly_cost"], 2)})
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
     st.caption("Um mês equivale a 30 dias; uso em dias da semana é convertido por média de 30/7 semanas.")
+
+
+def devices_page() -> None:
+    """Manage reusable appliances and editable example wattages."""
+    header("Aparelhos", "Cadastre a potência em watts de seus eletrônicos e eletrodomésticos.")
+    st.warning("As potências de catálogo são apenas ilustrativas. Use a etiqueta, manual ou medidor de tomada para estimativas melhores.", icon="ℹ️")
+    if st.button("Adicionar aparelhos de exemplo não cadastrados"):
+        pending = example_devices(DEVICES)
+        if not pending:
+            st.info("Todos os exemplos já estão cadastrados.")
+        else:
+            def insert_presets() -> None:
+                for device in pending:
+                    STORE.upsert_device(device)
+            save_or_warn(insert_presets, f"{len(pending)} aparelhos de exemplo adicionados.")
+
+    tab_add, tab_edit = st.tabs(["Cadastrar", "Editar ou excluir"])
+    with tab_add:
+        with st.form("new_device", clear_on_submit=True):
+            name = st.text_input("Nome do aparelho", placeholder="Ex.: Computador gamer")
+            category = st.text_input("Categoria", value="Informática")
+            c1, c2 = st.columns(2)
+            watts = c1.number_input("Potência ativa (W)", min_value=0.001, max_value=1_000_000.0,
+                                    value=300.0, step=10.0, format="%.3f")
+            standby = c2.number_input("Potência em espera (W)", min_value=0.0, max_value=1_000_000.0,
+                                      value=0.0, step=0.5, format="%.3f")
+            notes = st.text_area("Observações (opcional)", max_chars=500)
+            create = st.form_submit_button("Salvar novo aparelho", type="primary")
+        if create:
+            save_or_warn(lambda: STORE.upsert_device(Device(new_id(), name, category, watts, standby, notes)),
+                         "Aparelho cadastrado.")
+
+    with tab_edit:
+        if not DEVICES:
+            st.info("Ainda não há aparelhos para editar.")
+        else:
+            chosen_id = st.selectbox("Selecionar aparelho", [device.id for device in DEVICES],
+                                     format_func=lambda value: device_label(next(d for d in DEVICES if d.id == value)))
+            current = next(device for device in DEVICES if device.id == chosen_id)
+            with st.form(f"edit_device_{chosen_id}"):
+                name = st.text_input("Nome", value=current.name)
+                category = st.text_input("Categoria", value=current.category)
+                c1, c2 = st.columns(2)
+                watts = c1.number_input("Potência ativa (W)", min_value=0.001, max_value=1_000_000.0,
+                                        value=float(current.watts), step=10.0, format="%.3f")
+                standby = c2.number_input("Potência em espera (W)", min_value=0.0, max_value=1_000_000.0,
+                                          value=float(current.standby_watts), step=0.5, format="%.3f")
+                notes = st.text_area("Observações", value=current.notes, max_chars=500)
+                update = st.form_submit_button("Atualizar aparelho", type="primary")
+            if update:
+                save_or_warn(lambda: STORE.upsert_device(Device(current.id, name, category, watts, standby, notes)),
+                             "Aparelho atualizado. Cenários vinculados foram recalculados.")
+            st.divider()
+            confirm = st.checkbox(f"Confirmo a exclusão de '{current.name}'", key=f"delete_device_confirm_{chosen_id}")
+            if st.button("Excluir aparelho", disabled=not confirm, key=f"delete_device_{chosen_id}"):
+                save_or_warn(lambda: STORE.delete_device(chosen_id), "Aparelho excluído.")
+            st.caption("Se o aparelho estiver em um cenário, remova-o do cenário primeiro. A exclusão não ocorre automaticamente.")
+
+    st.divider()
+    st.subheader(f"Biblioteca local ({len(DEVICES)})")
+    if DEVICES:
+        rows = [{"Nome": d.name, "Categoria": d.category, "Potência (W)": d.watts,
+                 "Em espera (W)": d.standby_watts, "Observações": d.notes} for d in DEVICES]
+        st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
