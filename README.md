@@ -45,9 +45,18 @@ Estimate how much your computer, fan, shower, air conditioner, lights, or other 
   - [Setup](#setup)
     - [Clone the repository](#clone-the-repository)
   - [Installation:](#installation)
-  - [Run Programing Language Code:](#run-programing-language-code)
+    - [Easiest way](#easiest-way)
+  - [Run Python Code:](#run-python-code)
     - [Dependencies](#dependencies)
-  - [Usage](#usage)
+    - [CLI and developer verification](#cli-and-developer-verification)
+    - [Typical first session](#typical-first-session)
+  - [Supported electricity bill PDFs](#supported-electricity-bill-pdfs)
+    - [Copel PDF extraction and fallback priorities](#copel-pdf-extraction-and-fallback-priorities)
+    - [Worked example](#worked-example)
+  - [Mathematical model](#mathematical-model)
+    - [Limitations](#limitations)
+  - [Persistent data and privacy](#persistent-data-and-privacy)
+    - [Automatic saving, manual save, and recovery](#automatic-saving-manual-save-and-recovery)
   - [How to Cite?](#how-to-cite)
   - [Contributing](#contributing)
   - [Collaborators](#collaborators)
@@ -56,11 +65,17 @@ Estimate how much your computer, fan, shower, air conditioner, lights, or other 
 
 ## Introduction
 
-Detailed project description.
+Energy Usage Estimator is an interactive dashboard built in the style and project structure of [GitHub Contribution Analytics](https://github.com/BrenoFariasdaSilva/GitHub-Contribution-Analytics): a Streamlit entry point, an independent `src/` package, CLI, tests, `Makefile`, cross-platform setup helpers and explicit privacy rules.
+
+The interface is in **Brazilian Portuguese (pt-BR)**, values use **R$** and decimal commas, and the billing input is expressed in **R$/kWh** (cost per *kilowatt-hour*, not price per kW/hour). It **does not** integrate with the utility company or read the actual electricity meter. All calculations are estimates based on the entered wattage, usage schedule and price.
 
 ## Requirements
 
-Bullet points of the requirements.
+- **Python 3.11 or newer**, installed and on PATH. During Python installation on Windows, check **Add Python to PATH**.
+- Internet access on **first launch** to install Streamlit, pandas, Plotly and pypdf into `.venv/` (later launches can run offline if dependencies are present).
+- A modern browser. Streamlit opens its local dashboard in the browser.
+- No database, account, API key, Git configuration, or utility-provider account required.
+- Optional: GNU Make for `make` commands.
 
 ## Setup
 
@@ -73,112 +88,7 @@ Bullet points of the requirements.
    cd Energy-Usage-Estimator
    ```
 
-## Installation:
-
-* Programing Language:
-
-  * Manually:
-      ```bash
-      # Programing Language:
-      sudo apt install program-language -y
-      ```
-
-  * Using Makefile:
-      ```bash
-      make install
-      ```
-
-  * Using ShellScript:
-      ```bash
-      chmod +x install.sh
-      sudo ./install.sh
-      ```  
-
-## Run Programing Language Code:
-
-```bash
-# Command here 
-```
-
-### Dependencies
-
-1. Install the project dependencies with the following command:
-
-   ```bash
-   make dependencies
-   ```
-
-## Usage
-
-In order to run the project, run the following command:
-
-```bash
-make run
-```
-
-## How to Cite?
-
-If you use the Energy-Usage-Estimator in your research, please cite it using the following BibTeX entry:
-
-```
-@misc{softwareEnergy-Usage-Estimator:2026,
-  title = {Energy-Usage-Estimator: Local-first electricity cost simulator · Python + Streamlit + Plotly},
-  author = {Breno Farias da Silva},
-  year = {2026},
-  howpublished = {https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator},
-  note = {Accessed on November 14, 2026}
-}
-```
-
-Additionally, a `main.bib` file is available in the root directory of this repository, in which contains the BibTeX entry for this project.
-
-If you find this repository valuable, please don't forget to give it a ⭐ to show your support! Contributions are highly encouraged, whether by creating issues for feedback or submitting pull requests (PRs) to improve the project. For details on how to contribute, please refer to the [Contributing](#contributing) section below.
-
-Thank you for your support and for recognizing the contribution of this tool to your work!
-
-## Contributing
-
-Contributions are what make the open-source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**. If you have suggestions for improving the code, your insights will be highly welcome.
-In order to contribute to this project, please follow the guidelines below or read the [CONTRIBUTING.md](CONTRIBUTING.md) file for more details on how to contribute to this project, as it contains information about the commit standards and the entire pull request process.
-Please follow these guidelines to make your contributions smooth and effective:
-
-1. **Set Up Your Environment**: Ensure you've followed the setup instructions in the [Setup](#setup) section to prepare your development environment.
-
-2. **Make Your Changes**:
-   - **Create a Branch**: `git checkout -b feature/YourFeatureName`
-   - **Implement Your Changes**: Make sure to test your changes thoroughly.
-   - **Commit Your Changes**: Use clear commit messages, for example:
-     - For new features: `git commit -m "FEAT: Add some AmazingFeature"`
-     - For bug fixes: `git commit -m "FIX: Resolve Issue #123"`
-     - For documentation: `git commit -m "DOCS: Update README with new instructions"`
-     - For refactorings: `git commit -m "REFACTOR: Enhance component for better aspect"`
-     - For snapshots: `git commit -m "SNAPSHOT: Temporary commit to save the current state for later reference"`
-   - See more about crafting commit messages in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
-
-3. **Submit Your Contribution**:
-   - **Push Your Changes**: `git push origin feature/YourFeatureName`
-   - **Open a Pull Request (PR)**: Navigate to the repository on GitHub and open a PR with a detailed description of your changes.
-
-4. **Stay Engaged**: Respond to any feedback from the project maintainers and make necessary adjustments to your PR.
-
-5. **Celebrate**: Once your PR is merged, celebrate your contribution to the project!
-
-## Collaborators
-
-We thank the following people who contributed to this project:
-
-<table>
-  <tr>
-    <td align="center">
-      <a href="#" title="defina o titulo do link">
-        <img src="https://github.com/BrenoFariasdaSilva.png" width="100px;" alt="My Profile Picture"/><br>
-        <sub>
-          <b>Breno Farias da Silva</b>
-        </sub>
-      </a>
-    </td>
-  </tr>
-</table>
+Alternatively, download and extract the source ZIP into any folder. Do **not** extract to a protected system folder such as `C:\Program Files`.
 
 ## License
 
