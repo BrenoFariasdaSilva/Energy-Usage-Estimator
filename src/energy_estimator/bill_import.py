@@ -150,3 +150,74 @@ def _public_lighting(text: str) -> Decimal | None:
     ):
         values.append(_decimal(match.group(1)))
     return _unique(values)
+
+
+def extract_copel_bill_text(text: str) -> CopelBill:
+    """Parse the *layout-preserving* text of page one of a Copel DANF3E PDF.
+
+    Known taxed TE/TUSD prices take precedence, but only when the item row
+    amounts agree with billed kWh. Otherwise use Method 2 (full-bill average)
+    if and only if both total and current billed kWh can be established.
+    """
+    normalized = _normalized(text)
+    # Check actual issuer in the header, not merely a stray brand word elsewhere.
+    header = normalized[:2600]
+    if not ("DANF3E" in header and _PROVIDER.search(header) and _CNPJ.search(header)):
+        raise UnsupportedBillError(
+            "PDF não reconhecido como fatura DANF3E da Copel Distribuição S.A. "
+            "Somente PDFs textuais desse modelo da Copel são suportados."
+        )
+
+    month = re.search(r"^\s*(0[1-9]|1[0-2])/(20\d{2})\s+\d{2}/\d{2}/\d{4}\s+R\$", normalized, re.M)
+    reference = f"{month.group(1)}/{month.group(2)}" if month else None
+    total = _total(normalized)
+    energy = _component(normalized, "energy")
+    distribution = _component(normalized, "distribution")
+    meter = _meter_kwh(normalized)
+
+    # Extract kWh from the invoice's charge rows; require agreement if two rows exist.
+    charges = [item.kwh for item in (energy, distribution) if item]
+    rows_kwh = _unique(charges)
+    if len(charges) == 2 and rows_kwh is None:
+        raise BillImportError("Os consumos das linhas de energia e distribuição são diferentes; verifique a fatura.")
+    if rows_kwh is not None and meter is not None and rows_kwh != meter:
+        raise BillImportError("O consumo da tabela e a leitura do medidor divergem; verifique a fatura.")
+    billed_kwh = rows_kwh if rows_kwh is not None else meter
+
+    if total is None or total <= 0 or billed_kwh is None or billed_kwh <= 0:
+        raise BillImportError(
+            "Não foi possível identificar com segurança o total a pagar e o consumo faturado (kWh) "
+            "neste PDF da Copel. Informe os valores manualmente."
+        )
+
+    method: Literal["component_prices", "full_bill_average"] = "full_bill_average"
+    rate = total / billed_kwh
+    if energy and distribution and energy.kwh == distribution.kwh == billed_kwh:
+        # Compare the charged value with the tax-inclusive unit price, not with
+        # Copel's lower 'Tarifa unit. (R$)' column (excluding some taxes).
+        fits = all(
+            item.unit_price > 0 and abs(item.unit_price * billed_kwh - item.amount) <= Decimal("0.03")
+            for item in (energy, distribution)
+        )
+        if fits:
+            candidate = energy.unit_price + distribution.unit_price
+            # A nonsensical price is never accepted just because two rows match.
+            if 0 < candidate <= Decimal("1000"):
+                rate = candidate
+                method = "component_prices"
+
+    if not (Decimal("0") < rate <= Decimal("1000")):
+        raise BillImportError("A tarifa calculada está fora da faixa permitida. Confira a fatura manualmente.")
+
+    return CopelBill(
+        reference=reference,
+        billed_kwh=billed_kwh,
+        total_brl=total,
+        rate_brl_kwh=rate,
+        method=method,
+        energy_unit_price=energy.unit_price if energy else None,
+        distribution_unit_price=distribution.unit_price if distribution else None,
+        energy_amount=energy.amount if energy else None,
+        distribution_amount=distribution.amount if distribution else None,
+        public_lighting_brl=_public_lighting(normalized),
+    )
