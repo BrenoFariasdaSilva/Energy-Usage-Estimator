@@ -537,3 +537,41 @@ def scenarios_page() -> None:
             STORE.delete_scenario(scenario.id)
             st.session_state["next_scenario_id"] = "__new__"
         save_or_warn(delete_selected, "Cenário excluído. Os aparelhos cadastrados foram preservados.")
+
+
+def comparison_page() -> None:
+    """Contrast saved scenarios and estimate savings from changing habits."""
+    header("Comparação de cenários", "Compare alternativas e observe o impacto mensal e anual dos hábitos de uso.")
+    if not SCENARIOS:
+        st.info("Salve cenários primeiro.")
+        return
+    rows: list[dict[str, float | str]] = []
+    for scenario in SCENARIOS:
+        amount = totals(estimate_scenario(scenario, DEVICES, TARIFF.rate))
+        rows.append({"Cenário": scenario.name, "Semanal (R$)": round(amount["weekly_cost"], 2),
+                     "Mensal (R$)": round(amount["monthly_cost"], 2),
+                     "Anual (R$)": round(amount["annual_cost"], 2),
+                     "Mensal (kWh)": round(amount["monthly_kwh"], 3)})
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    if any(row["Mensal (R$)"] > 0 for row in rows):
+        render_chart(scenario_comparison(rows))
+    st.download_button("Baixar comparação (CSV)", rows_csv(rows), "comparacao-cenarios.csv", "text/csv")
+    if len(SCENARIOS) > 1:
+        st.subheader("Diferença entre alternativas")
+        left, right = st.columns(2)
+        ids = [item.id for item in SCENARIOS]
+        baseline_id = left.selectbox("Cenário atual", ids, format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item))
+        candidate_id = right.selectbox("Cenário alternativo", ids, index=1,
+                                       format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item))
+        if baseline_id == candidate_id:
+            st.info("Selecione dois cenários diferentes.")
+        else:
+            baseline = next(s for s in SCENARIOS if s.id == baseline_id)
+            candidate = next(s for s in SCENARIOS if s.id == candidate_id)
+            before = totals(estimate_scenario(baseline, DEVICES, TARIFF.rate))
+            after = totals(estimate_scenario(candidate, DEVICES, TARIFF.rate))
+            delta = before["monthly_cost"] - after["monthly_cost"]
+            st.metric("Economia mensal estimada (positivo = economia)",
+                      f"{'-' if delta < 0 else ''}{format_brl(abs(delta))}")
+            st.metric("Economia anual estimada", f"{'-' if delta < 0 else ''}{format_brl(abs(before['annual_cost'] - after['annual_cost']))}")
+    st.caption("Cenários usam a mesma tarifa atualmente salva. Alterá-la recalcula automaticamente todos os valores.")
