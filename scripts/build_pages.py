@@ -49,3 +49,46 @@ def pages_theme_stylesheet() -> str:
         raise ValueError("O seletor do tema escuro mudou; revise o gerador de Pages.")
     palette = source["_THEME_PALETTE_CSS"].replace(old, ':root[data-eue-theme="dark"]')
     return "/* Derived from ui_theme.py; do not edit the generated file. */\n" + palette + source["_THEME_RULES"] + "\n"
+
+
+def build(output: Path) -> list[str]:
+    """Recreate output strictly from allowlisted sources, never from the data dir."""
+    output = output.resolve()
+    if output == ROOT or output in ROOT.parents or (ROOT in output.parents and output != ROOT / "dist"):
+        raise ValueError("O destino não pode ser o repositório nem uma pasta de fontes.")
+    if output.exists():
+        # Refuse to remove an unrelated directory, even if --output was mistyped.
+        if any(output.iterdir()) and not (output / BUILD_MARKER).is_file():
+            raise ValueError(f"Recusando substituir uma pasta não gerada por este script: {output}")
+        shutil.rmtree(output)
+    output.mkdir(parents=True)
+    (output / BUILD_MARKER).write_text("Energy Usage Estimator Pages build\n", encoding="utf-8")
+    for name in STATIC_FILES:
+        shutil.copy2(SITE / name, output / name)
+    (output / "app-theme.css").write_text(pages_theme_stylesheet(), encoding="utf-8")
+    shutil.copy2(ROOT / "LICENSE", output / "LICENSE")
+    (output / ".nojekyll").write_text("", encoding="utf-8")
+    sources = source_files()
+    for name, src in sources.items():
+        if not src.is_file():
+            raise FileNotFoundError(src)
+        dest = output / "python" / name
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+    manifest = sorted(sources)
+    (output / "files-manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    return manifest
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, default=ROOT / "dist", help="Pasta a publicar no Pages")
+    args = parser.parse_args()
+    paths = build(args.output)
+    print(f"GitHub Pages: {len(paths)} módulos Python, {len(STATIC_FILES)} recursos estáticos -> {args.output}")
+
+
+if __name__ == "__main__":
+    main()
