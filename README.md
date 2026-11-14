@@ -193,6 +193,30 @@ python -m ruff check .
 
 For a demo, import `examples/backup-demo.json`. **Warning:** Importing replaces existing data after confirmation.
 
+## Supported electricity bill PDFs
+
+| Document | Support |
+|---|---|
+| Copel DANF3E/NF3e (verified text-based layout) | **Supported** |
+| Copel with missing unit prices but valid total and kWh | **Supported via fallback** |
+| Other Copel layouts | **Not guaranteed** |
+| Other electricity providers | **Unsupported** |
+| Scanned, protected or unreadable PDFs | **Unsupported** |
+
+**Limits:** Maximum 10 MB and 6 pages. Only the first page is analyzed. Processing is local; original PDFs and customer identifiers are not saved.
+
+### Copel PDF extraction and fallback priorities
+
+1. Verify Copel's issuer information, CNPJ, invoice total and billed consumption.
+2. **Preferred method:** Add validated, tax-inclusive energy (TE) and distribution (TUSD) unit prices, excluding public lighting.
+3. **Fallback:** If unit prices cannot be validated, calculate `total bill ÷ billed kWh`.
+4. Preview and confirm the result before applying. Unsupported or rejected PDFs never modify saved settings.
+
+**Example:** For 168 kWh, TE of R$ 0.415476/kWh and TUSD of R$ 0.611012/kWh:
+
+- **Preferred tariff:** R$ 1.026488/kWh.
+- **Full-bill average:** R$ 192.72 ÷ 168 = R$ 1.147143/kWh.
+
 ## License
 
 ### Apache License 2.0
