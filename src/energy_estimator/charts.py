@@ -40,3 +40,25 @@ def scenario_period_bar(estimated: list[UsageEstimate], period: str = "month") -
     fig.update_layout(showlegend=False)
     fig.update_traces(textposition="outside", cliponaxis=False)
     return _polish(fig, title=title, height=max(310, min(650, 80 + 42 * len(df))))
+
+
+def scenario_monthly_bar(estimated: list[UsageEstimate]) -> go.Figure:
+    """Keep a convenience alias for the common 30-day scenario plot."""
+    return scenario_period_bar(estimated, "month")
+
+
+def scenario_energy_donut(estimated: list[UsageEstimate]) -> go.Figure:
+    """Show the estimated energy share of each scenario device."""
+    df = pd.DataFrame([{"Aparelho": item.device_name, "kWh/mês": item.monthly_kwh} for item in estimated])
+    fig = px.pie(df, values="kWh/mês", names="Aparelho", hole=0.55, color_discrete_sequence=PALETTE)
+    fig.update_traces(textinfo="percent", hovertemplate="%{label}: %{value:.2f} kWh (%{percent})<extra></extra>")
+    return _polish(fig, title="Participação no consumo mensal")
+
+
+def scenario_comparison(rows: list[dict[str, float | str]]) -> go.Figure:
+    """Compare saved scenarios using estimated monthly costs."""
+    df = pd.DataFrame(rows).sort_values("Mensal (R$)", ascending=False)
+    fig = px.bar(df, x="Cenário", y="Mensal (R$)", color="Cenário", text_auto=".2f",
+                 color_discrete_sequence=PALETTE)
+    fig.update_layout(showlegend=False)
+    return _polish(fig, title="Comparação de cenários — custo por 30 dias")
