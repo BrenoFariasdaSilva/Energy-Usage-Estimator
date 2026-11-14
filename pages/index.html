@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Energy Usage Estimator: simule o consumo de energia elétrica no seu navegador.">
+  <meta name="theme-color" content="#0B121C">
+  <meta name="color-scheme" content="light dark">
+  <title>Energy Usage Estimator</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <!-- Pin the Stlite browser runtime so routine deployments do not silently upgrade it. -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.11.0/build/stlite.css">
+  <link rel="stylesheet" href="./pages.css">
+  <link rel="stylesheet" href="./app-theme.css">
+  <script type="module" src="./boot.js"></script>
+</head>
+<body>
+  <div id="splash" role="status" aria-live="polite">
+    <div class="splash-card">
+      <div class="brand"><span class="brand-mark">⚡</span><span>Energy Usage Estimator</span></div>
+      <h1>Preparando o aplicativo...</h1>
+      <p id="launch-status">Carregando o ambiente Python dentro do navegador. A primeira execução pode exigir downloads adicionais.</p>
+      <noscript><p>Ative o JavaScript para usar a aplicação.</p></noscript>
+    </div>
+  </div>
+  <main id="root" aria-label="Aplicativo Energy Usage Estimator"></main>
+</body>
+</html>
