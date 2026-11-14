@@ -646,3 +646,59 @@ def storage_page() -> None:
             "na internet com dados pessoais: não há autenticação nem separação entre usuários. "
             "Não enviamos dados para serviços externos pelo código do aplicativo."
         )
+
+
+PAGES = ("Início", "Aparelhos", "Calculadora", "Cenários", "Comparações", "Dados e backups")
+with st.sidebar:
+    st.title("Energy Usage Estimator")
+    st.caption("Painel de estimativas de eletricidade")
+    selected_theme = st.segmented_control(
+        "Aparência", ("light", "dark"), default=SAVED_THEME,
+        format_func=lambda value: "☀ Claro" if value == "light" else "◐ Escuro",
+        required=True, key="appearance_choice",
+    )
+    if selected_theme != SAVED_THEME:
+        try:
+            STORE.save_theme(selected_theme)
+        except (ValueError, StorageError, OSError) as exc:
+            st.error(f"Não foi possível salvar o tema: {exc}")
+            ACTIVE_THEME = SAVED_THEME
+        else:
+            ACTIVE_THEME = selected_theme
+    else:
+        ACTIVE_THEME = SAVED_THEME
+    st.divider()
+    page = st.radio("Menu", PAGES, key="page_selector")
+    st.divider()
+    st.metric("Tarifa atual", f"R$ {format_number(TARIFF.rate, 4)}/kWh")
+    if TARIFF.source == "copel_pdf":
+        st.caption("Origem: PDF Copel (energia + distribuição)" if TARIFF.mode == "direct"
+                   else "Origem: PDF Copel (total ÷ kWh)")
+    else:
+        st.caption("Origem: valor informado" if TARIFF.mode == "direct" else "Origem: fatura ÷ consumo")
+    st.caption(f"{len(DEVICES)} aparelhos · {len(SCENARIOS)} cenários")
+    st.caption(
+        "JSON salvo neste navegador · exporte backups" if BROWSER_MODE
+        else "Salvamento automático ativo · backup manual em Dados e backups"
+    )
+
+# Native Streamlit uses its normal injected stylesheet. On static Pages the host
+# provides a persistent stylesheet and synchronizes the actual segmented selection;
+# injecting a second stylesheet into Stlite caused theme conflicts on reruns.
+st.html(browser_theme_marker(ACTIVE_THEME) if BROWSER_MODE else theme_css(ACTIVE_THEME))
+
+if "notification" in st.session_state:
+    st.success(st.session_state.pop("notification"))
+
+if page == "Início":
+    dashboard_page()
+elif page == "Aparelhos":
+    devices_page()
+elif page == "Calculadora":
+    calculator_page()
+elif page == "Cenários":
+    scenarios_page()
+elif page == "Comparações":
+    comparison_page()
+else:
+    storage_page()
