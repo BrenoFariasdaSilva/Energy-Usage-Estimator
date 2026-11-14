@@ -507,3 +507,33 @@ def scenario_results(scenario: Scenario) -> None:
     st.caption("Fórmula semanal: (W × horas/dia × dias/semana × quantidade × carga média) / 1.000; "
                "se habilitada, espera = W de espera × (168 − horas ativas/semana) × quantidade / 1.000. "
                "Mês = semana × 30/7; ano = semana × 365/7.")
+
+
+def scenarios_page() -> None:
+    """Build, edit, compare and delete persistent multi-device schedules."""
+    header("Cenários de uso", "Combine aparelhos, quantidade, horas por dia e dias por semana. Os cenários ficam salvos em JSON.")
+    scenario = scenario_select()
+    scenario_metadata(scenario)
+    if scenario is None:
+        st.info("Salve o novo cenário para começar a adicionar aparelhos.")
+        return
+    scenario_item_editor(scenario)
+    if scenario.items:
+        st.subheader("Aparelhos do cenário")
+        known = {device.id: device for device in DEVICES}
+        for item in scenario.items:
+            left, right = st.columns([5, 1], vertical_alignment="center")
+            left.write(f"**{known[item.device_id].name}** — {format_number(item.hours_per_day)} h/dia, "
+                       f"{item.days_per_week} dias/semana, {item.quantity} un.")
+            if right.button("Remover", key=f"remove_item_{scenario.id}_{item.device_id}"):
+                updated = Scenario(scenario.id, scenario.name, scenario.description,
+                                   tuple(other for other in scenario.items if other.device_id != item.device_id))
+                save_or_warn(lambda: STORE.upsert_scenario(updated), "Aparelho removido do cenário.")
+    scenario_results(scenario)
+    st.divider()
+    confirm = st.checkbox(f"Quero excluir definitivamente o cenário '{scenario.name}'", key=f"del_scn_ok_{scenario.id}")
+    if st.button("Excluir cenário", disabled=not confirm, key=f"del_scn_{scenario.id}"):
+        def delete_selected() -> None:
+            STORE.delete_scenario(scenario.id)
+            st.session_state["next_scenario_id"] = "__new__"
+        save_or_warn(delete_selected, "Cenário excluído. Os aparelhos cadastrados foram preservados.")
