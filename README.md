@@ -251,6 +251,32 @@ Standby consumption applies only when enabled. Monthly and annual estimates use 
 
 Estimates depend on actual appliance consumption, usage and tariff accuracy. The application does not model complex tariffs, detailed taxation or real-time electricity measurements. Full-bill averages may include fixed charges and therefore differ from marginal electricity costs.
 
+## Persistent data and privacy
+
+All information is stored **locally**, automatically saved after confirmed changes and excluded from Git:
+
+```text
+data/
+├── devices.json       # Appliances
+├── scenarios.json     # Usage scenarios
+├── settings.json      # Tariff and appearance
+└── backups/           # Local backups
+```
+
+Set `ENERGY_ESTIMATOR_DATA_DIR` to use another directory. The `.env.example` file is informational and is not loaded automatically.
+
+Data belongs to the machine running Streamlit, **not browser storage**. The application is intended for local, single-user operation and should not be publicly exposed.
+
+### Automatic saving, manual save, and recovery
+
+- **Automatic:** Confirmed changes to devices, scenarios, tariffs and themes are immediately saved to JSON.
+- **Manual:** **Dados e backups → Salvar dados agora** saves all JSON files and creates a timestamped local backup.
+- **Export:** **Baixar backup completo (JSON)** downloads a portable backup.
+- **Restore:** Validates imported JSON, backs up existing data and restores after confirmation. Older backups default to the light theme.
+- **Protection:** Invalid files are not silently overwritten. Unsubmitted form changes are not saved.
+
+The light/dark switch uses application CSS; some native Streamlit components may retain their own appearance.
+
 ## License
 
 ### Apache License 2.0
