@@ -89,3 +89,20 @@ def estimate_scenario(scenario: Scenario, devices: list[Device], rate: float) ->
             raise ValueError(f"Cenário '{scenario.name}' referencia aparelho inexistente: {item.device_id}.")
         rows.append(estimate_item(device_by_id[item.device_id], item, rate))
     return rows
+
+
+def totals(estimates: list[UsageEstimate]) -> dict[str, float]:
+    """Sum energy and cost at each time horizon."""
+    keys = ("weekly_kwh", "monthly_kwh", "annual_kwh", "weekly_cost", "monthly_cost", "annual_cost")
+    return {key: sum(getattr(estimate, key) for estimate in estimates) for key in keys}
+
+
+def format_brl(amount: float) -> str:
+    """Format BRL monetary amounts independently of system locale."""
+    _number(amount, "Valor monetário", maximum=1_000_000_000_000_000_000)
+    return "R$ " + f"{amount:,.2f}".replace(",", "_").replace(".", ",").replace("_", ".")
+
+
+def format_number(amount: float, decimals: int = 2) -> str:
+    """Format decimal quantities with Brazilian grouping and separators."""
+    return f"{amount:,.{decimals}f}".replace(",", "_").replace(".", ",").replace("_", ".")
