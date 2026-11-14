@@ -357,3 +357,28 @@ _THEME_RULES = """
     .eue-status strong {color: var(--eue-accent);}
 
 """
+
+
+def theme_css(theme: str) -> str:
+    """Theme CSS and its single state marker; suitable for ``st.html``.
+
+    The same style rules are returned for both appearances. The marker alone
+    changes, so a rerun cannot leave stale, competing dark/light rules.
+    """
+    if theme not in THEMES:
+        raise ValueError("Tema desconhecido.")
+    return (
+        "<style>\n" + _THEME_PALETTE_CSS + _THEME_RULES + "\n</style>"
+        + f'<span id="eue-active-theme" data-theme="{escape(theme)}" '
+        + 'hidden aria-hidden="true"></span>'
+    )
+
+def browser_theme_marker(theme: str) -> str:
+    """Expose the saved browser appearance without injecting a competing stylesheet.
+
+    On GitHub Pages the host page owns the CSS. This marker is a fallback if a
+    Stlite/Streamlit version changes its segmented-control DOM structure.
+    """
+    if theme not in THEMES:
+        raise ValueError("Tema desconhecido.")
+    return f'<span id="eue-active-theme" data-theme="{escape(theme)}" hidden aria-hidden="true"></span>'
