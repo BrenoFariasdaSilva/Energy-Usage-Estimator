@@ -181,6 +181,18 @@ For source linting after installing `ruff`:
 python -m ruff check .
 ```
 
+### Typical first session
+
+1. **Início:** Import a supported Copel PDF or manually enter your electricity tariff (default: **R$ 1.00/kWh**).
+2. **Aparelhos:** Add your devices or load example appliances. Adjust wattage to match actual specifications.
+3. **Calculadora:** Estimate electricity consumption and costs for different usage durations.
+4. **Cenários:** Create reusable schedules with multiple appliances, quantities, usage hours/minutes and days per week.
+5. **Comparações:** Compare scenarios and estimated savings.
+6. **Aparência:** Switch between **Claro** and **Escuro**. Your preference is saved automatically.
+7. **Dados e backups:** Save a local JSON checkpoint, download a backup or restore previous data.
+
+For a demo, import `examples/backup-demo.json`. **Warning:** Importing replaces existing data after confirmation.
+
 ## License
 
 ### Apache License 2.0
