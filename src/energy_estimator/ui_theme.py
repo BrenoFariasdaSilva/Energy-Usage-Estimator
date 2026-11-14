@@ -382,3 +382,24 @@ def browser_theme_marker(theme: str) -> str:
     if theme not in THEMES:
         raise ValueError("Tema desconhecido.")
     return f'<span id="eue-active-theme" data-theme="{escape(theme)}" hidden aria-hidden="true"></span>'
+
+
+def style_chart(fig: go.Figure, theme: str) -> go.Figure:
+    """Synchronize Plotly surfaces, grid, font and hover colors with the selected UI theme."""
+    if theme not in THEMES:
+        raise ValueError("Tema desconhecido.")
+    c = THEMES[theme]
+    # Modify a copy so cached figures remain independent of the current user theme.
+    result = go.Figure(fig)
+    result.update_layout(
+        template="plotly_dark" if theme == "dark" else "plotly_white",
+        paper_bgcolor=c.surface,
+        plot_bgcolor=c.surface,
+        font=dict(color=c.text),
+        title_font=dict(color=c.text),
+        hoverlabel=dict(bgcolor=c.surface_alt, font=dict(color=c.text)),
+        legend=dict(font=dict(color=c.text)),
+    )
+    result.update_xaxes(gridcolor=c.grid, linecolor=c.border, zerolinecolor=c.border, tickfont_color=c.muted)
+    result.update_yaxes(gridcolor=c.grid, linecolor=c.border, zerolinecolor=c.border, tickfont_color=c.muted)
+    return result
