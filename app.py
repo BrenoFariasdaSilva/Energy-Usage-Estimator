@@ -216,3 +216,29 @@ def duration_inputs(prefix: str) -> tuple[float, int, float]:
         key=f"{prefix}_duty",
     )
     return float(hours), int(quantity), percent / 100
+
+
+def quick_calc() -> None:
+    """Show an instant per-hour, 8-hour, 24-hour or custom appliance calculation."""
+    st.subheader("Consulta rápida de consumo")
+    if not DEVICES:
+        st.info("Cadastre um aparelho em 'Aparelhos' ou adicione exemplos para começar.")
+        return
+    selected_id = st.selectbox(
+        "Aparelho", [device.id for device in DEVICES],
+        format_func=lambda item: device_label(next(device for device in DEVICES if device.id == item)),
+        key="quick_device",
+    )
+    device = next(item for item in DEVICES if item.id == selected_id)
+    hours, quantity, duty = duration_inputs("quick")
+    kwh, price = cost_for_hours(device, hours, TARIFF.rate, quantity=quantity, duty_cycle=duty)
+    a, b, c = st.columns(3)
+    a.metric("Consumo estimado", f"{format_number(kwh, 3)} kWh")
+    b.metric("Custo estimado", format_brl(price))
+    c.metric("Tarifa aplicada", f"R$ {format_number(TARIFF.rate, 4)}/kWh")
+    st.caption("Custo para as horas selecionadas, sem consumo em espera. A carga média ajusta a potência nominal.")
+    st.markdown("**Atalhos para o aparelho selecionado**")
+    examples = st.columns(3)
+    for column, example_hours in zip(examples, (1, 8, 24)):
+        _, example_cost = cost_for_hours(device, example_hours, TARIFF.rate, quantity=quantity, duty_cycle=duty)
+        column.metric(f"{example_hours} {'hora' if example_hours == 1 else 'horas'}", format_brl(example_cost))
