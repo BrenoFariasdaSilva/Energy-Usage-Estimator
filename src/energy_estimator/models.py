@@ -146,3 +146,46 @@ class Scenario:
         """Serialize a complete scenario using JSON arrays for its usage items."""
         return {"id": self.id, "name": self.name, "description": self.description,
                 "items": [item.to_dict() for item in self.items]}
+
+
+@dataclass(frozen=True, slots=True)
+class Tariff:
+    """Local currency rate, entered directly or estimated from a whole bill."""
+
+    mode: str = "direct"
+    direct_rate: float = 1.0
+    bill_amount: float = 0.0
+    bill_kwh: float = 0.0
+    source: str = "manual"
+    bill_reference: str = ""
+
+    def __post_init__(self) -> None:
+        if self.mode not in ("direct", "bill"):
+            raise ValueError("Modo de tarifa inválido.")
+        if self.source not in ("manual", "copel_pdf"):
+            raise ValueError("Origem da tarifa inválida.")
+        if not isinstance(self.bill_reference, str) or (self.bill_reference and not re.fullmatch(r"(?:0[1-9]|1[0-2])/20\d{2}", self.bill_reference)):
+            raise ValueError("Referência da fatura inválida.")
+        _number(self.direct_rate, "Tarifa (R$/kWh)", maximum=1000)
+        _number(self.bill_amount, "Valor da fatura (R$)", maximum=10_000_000)
+        _number(self.bill_kwh, "Consumo na fatura (kWh)", maximum=10_000_000)
+        if self.mode == "bill" and self.bill_kwh <= 0:
+            raise ValueError("O consumo da fatura precisa ser maior do que zero.")
+        if self.mode == "bill" and self.bill_amount / self.bill_kwh > 1000:
+            raise ValueError("A tarifa efetiva calculada excede R$ 1.000/kWh. Confira os valores informados.")
+
+    @property
+    def rate(self) -> float:
+        """Return effective cost for one kWh in the chosen billing mode."""
+        return self.direct_rate if self.mode == "direct" else self.bill_amount / self.bill_kwh
+
+    @classmethod
+    def from_dict(cls, data: object) -> Tariff:
+        """Load a persisted tariff, validating all values."""
+        if not isinstance(data, dict):
+            raise ValueError("A configuração da tarifa deve ser um objeto JSON.")
+        return cls(**{key: data[key] for key in ("mode", "direct_rate", "bill_amount", "bill_kwh", "source", "bill_reference") if key in data})
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize the tariff configuration."""
+        return asdict(self)
