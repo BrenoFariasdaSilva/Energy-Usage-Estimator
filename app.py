@@ -456,3 +456,54 @@ def scenario_item_editor(scenario: Scenario) -> None:
                                tuple(item for item in scenario.items if item.device_id != selected_id) + (new_item,))
             STORE.upsert_scenario(updated)
         save_or_warn(save_schedule, "Programação salva no cenário.")
+
+
+def scenario_results(scenario: Scenario) -> None:
+    """Summarize scenario outputs with breakdown, charts and a CSV export."""
+    if not scenario.items:
+        st.info("Adicione aparelhos acima para gerar uma projeção semanal, mensal e anual.")
+        return
+    st.divider()
+    st.subheader("Projeção do cenário")
+    estimated = estimate_scenario(scenario, DEVICES, TARIFF.rate)
+    summary = totals(estimated)
+    a, b, c, d = st.columns(4)
+    a.metric("Por semana", format_brl(summary["weekly_cost"]))
+    b.metric("Por 30 dias", format_brl(summary["monthly_cost"]))
+    c.metric("Por 365 dias", format_brl(summary["annual_cost"]))
+    d.metric("Energia / 30 dias", f"{format_number(summary['monthly_kwh'], 2)} kWh")
+
+    rows = []
+    for item, estimate in zip(scenario.items, estimated):
+        rows.append({
+            "Aparelho": estimate.device_name,
+            "Horas/dia": item.hours_per_day,
+            "Dias/semana": item.days_per_week,
+            "Quantidade": item.quantity,
+            "Carga (%)": round(item.duty_cycle * 100, 1),
+            "Espera": "Sim" if item.include_standby else "Não",
+            "kWh/semana": round(estimate.weekly_kwh, 3),
+            "kWh/30 dias": round(estimate.monthly_kwh, 3),
+            "R$/semana": round(estimate.weekly_cost, 2),
+            "R$/30 dias": round(estimate.monthly_cost, 2),
+            "R$/365 dias": round(estimate.annual_cost, 2),
+        })
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.download_button("Exportar itens e valores (CSV)", rows_csv(rows),
+                       f"cenario-{scenario.id}.csv", "text/csv", key=f"csv_{scenario.id}")
+    view = st.segmented_control(
+        "Período dos gráficos de custo", ["Semana", "30 dias", "365 dias"],
+        default="30 dias", required=True, key=f"scenario_chart_period_{scenario.id}",
+    )
+    period = {"Semana": "week", "30 dias": "month", "365 dias": "year"}[view]
+    l, r = st.columns(2)
+    with l:
+        render_chart(scenario_period_bar(estimated, period))
+    with r:
+        if any(row.monthly_kwh > 0 for row in estimated):
+            render_chart(scenario_energy_donut(estimated))
+        else:
+            st.info("Não há energia positiva para apresentar no gráfico de participação.")
+    st.caption("Fórmula semanal: (W × horas/dia × dias/semana × quantidade × carga média) / 1.000; "
+               "se habilitada, espera = W de espera × (168 − horas ativas/semana) × quantidade / 1.000. "
+               "Mês = semana × 30/7; ano = semana × 365/7.")
