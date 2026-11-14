@@ -109,3 +109,40 @@ class UsageItem:
     def to_dict(self) -> dict[str, object]:
         """Serialize a usage schedule."""
         return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class Scenario:
+    """Named collection of appliance schedules that can be saved and compared."""
+
+    id: str
+    name: str
+    description: str = ""
+    items: tuple[UsageItem, ...] = field(default_factory=tuple)
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "id", _id(self.id, "ID do cenário"))
+        object.__setattr__(self, "name", _text(self.name, "Nome do cenário"))
+        object.__setattr__(self, "description", _text(self.description, "Descrição", max_length=500, required=False))
+        if not isinstance(self.items, tuple) or not all(isinstance(item, UsageItem) for item in self.items):
+            raise ValueError("Itens do cenário inválidos.")
+        ids = [item.device_id for item in self.items]
+        if len(ids) != len(set(ids)):
+            raise ValueError("Um aparelho só pode aparecer uma vez em cada cenário.")
+
+    @classmethod
+    def from_dict(cls, data: object) -> Scenario:
+        """Validate and parse a complete scenario from JSON."""
+        if not isinstance(data, dict) or not isinstance(data.get("items"), list):
+            raise ValueError("Cenário ou lista de itens inválido.")
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            description=data.get("description", ""),
+            items=tuple(UsageItem.from_dict(item) for item in data["items"]),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        """Serialize a complete scenario using JSON arrays for its usage items."""
+        return {"id": self.id, "name": self.name, "description": self.description,
+                "items": [item.to_dict() for item in self.items]}
