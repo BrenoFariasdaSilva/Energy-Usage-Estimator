@@ -99,3 +99,69 @@ def test_export_import_with_previous_backup(tmp_path: Path, fan: Device, fan_sce
     assert previous.exists()
     assert json.loads(previous.read_bytes())["tariff"]["direct_rate"] == 0.4
     assert restored.load_all() == original.load_all()
+
+
+def test_import_invalid_backup_preserves_existing_state(tmp_path: Path, fan: Device) -> None:
+    """Failure to validate foreign keys cannot damage preexisting user records."""
+    store = JsonStore(tmp_path)
+    store.upsert_device(fan)
+    snapshot = store.backup_bytes()
+    malformed = json.loads(snapshot)
+    malformed["scenarios"] = [
+        Scenario(new_id(), "Órfão", items=(UsageItem(new_id(), 1),)).to_dict()
+    ]
+    with pytest.raises(ValueError, match="inexistente"):
+        store.restore_backup(json.dumps(malformed).encode())
+    assert store.backup_bytes() != b""  # Export timestamps are dynamic; compare content instead.
+    assert store.load_devices() == [fan]
+    assert not (tmp_path / "backups").exists()
+
+
+def test_oversized_import_and_foreign_backup_rejected(tmp_path: Path) -> None:
+    """Unexpected documents and giant uploads are rejected before any write."""
+    store = JsonStore(tmp_path)
+    with pytest.raises(ValueError, match="5 MB"):
+        store.restore_backup(b"x" * (5 * 1024 * 1024 + 1))
+    invalid = {"schema_version": 1, "app": "other", "devices": [], "scenarios": [], "tariff": Tariff().to_dict()}
+    with pytest.raises(ValueError, match="não é um backup"):
+        store.restore_backup(json.dumps(invalid).encode())
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_import_rollback_if_second_write_fails(tmp_path: Path, fan: Device, monkeypatch) -> None:
+    """Write errors during import restore the previous validated records."""
+    original = JsonStore(tmp_path / "source")
+    original.upsert_device(fan)
+    exported = original.backup_bytes()
+    store = JsonStore(tmp_path / "destination")
+    store.save_tariff(Tariff(direct_rate=0.9))
+    real_write = store._write
+    failed = [False]
+
+    def fail_once(name, document):
+        if name == "scenarios" and not failed[0]:
+            failed[0] = True
+            raise StorageError("Simulated disk failure")
+        return real_write(name, document)
+
+    monkeypatch.setattr(store, "_write", fail_once)
+    with pytest.raises(StorageError, match="Simulated"):
+        store.restore_backup(exported)
+    assert store.load_all() == ([], [], Tariff(direct_rate=0.9))
+    assert list((tmp_path / "destination" / "backups").glob("*.json"))
+
+
+def test_env_override(tmp_path: Path, monkeypatch) -> None:
+    """Custom directory is explicit and does not change project files."""
+    monkeypatch.setenv("ENERGY_ESTIMATOR_DATA_DIR", str(tmp_path / "custom"))
+    assert data_directory(tmp_path) == (tmp_path / "custom").resolve()
+    monkeypatch.delenv("ENERGY_ESTIMATOR_DATA_DIR")
+    assert data_directory(tmp_path) == tmp_path / "data"
+
+
+def test_catalog_adds_only_missing_names(fan: Device) -> None:
+    """Catalog starter examples do not overwrite existing user wattages."""
+    examples = example_devices([fan])
+    assert len(examples) == len(EXAMPLES) - 1
+    assert all(item.id != fan.id for item in examples)
+    assert "Ventilador" not in [item.name for item in examples]
