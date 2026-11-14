@@ -575,3 +575,74 @@ def comparison_page() -> None:
                       f"{'-' if delta < 0 else ''}{format_brl(abs(delta))}")
             st.metric("Economia anual estimada", f"{'-' if delta < 0 else ''}{format_brl(abs(before['annual_cost'] - after['annual_cost']))}")
     st.caption("Cenários usam a mesma tarifa atualmente salva. Alterá-la recalcula automaticamente todos os valores.")
+
+
+def storage_page() -> None:
+    """Explain automatic persistence and offer explicit local checkpoints and export/import."""
+    header("Dados e backups", "Salvamento automático nos arquivos JSON, com cópias de segurança manuais e exportação.")
+    st.markdown(
+        '<div class="eue-status"><strong>Salvamento automático ativado.</strong> '
+        'Cada cadastro, atualização, exclusão ou tarifa confirmada é gravada em JSON imediatamente. '
+        'Os campos ainda não enviados nos formulários não são salvos.</div>',
+        unsafe_allow_html=True,
+    )
+    if BROWSER_MODE:
+        st.info(
+            "Nesta versão do GitHub Pages, seus JSONs são armazenados no IndexedDB deste navegador. "
+            "Eles não são compartilhados com outros visitantes e não são enviados a um servidor da aplicação. "
+            "Use 'Baixar backup completo (JSON)' para manter uma cópia fora do navegador."
+        )
+        st.caption("Caminho virtual no navegador (não é uma pasta no seu computador):")
+    else:
+        st.caption("Todos os dados ficam na pasta abaixo, no computador que executa a aplicação:")
+    st.code(str(STORE.directory), language="text")
+    st.markdown("Arquivos: `devices.json`, `scenarios.json` e `settings.json` (tarifa e tema). "
+                "Arquivos de segurança: `backups/`.")
+    st.subheader("Salvar manualmente")
+    st.write("Crie agora um ponto de restauração. O aplicativo regrava os três JSONs "
+             "e mantém uma cópia com data e hora em `backups/`, sem substituir backups anteriores.")
+    if st.button("Salvar dados agora (JSON + backup local)", key="manual_save_now", type="primary"):
+        try:
+            path = STORE.save_now()
+        except (ValueError, StorageError, OSError) as exc:
+            st.error(str(exc))
+        else:
+            show_success(f"Dados gravados e backup manual criado: {path.name}")
+
+    st.divider()
+    st.subheader("Exportar")
+    st.download_button("Baixar backup completo (JSON)", STORE.backup_bytes(),
+                       "energy-usage-estimator-backup.json", "application/json", key="download_full_backup")
+    st.caption("O download salva uma cópia onde você escolher no navegador; "
+               "não altera os JSONs nem substitui o backup local.")
+    st.divider()
+    st.subheader("Restaurar backup")
+    upload = st.file_uploader("Arquivo JSON exportado por este aplicativo", type=["json"], key="import_file")
+    confirm = st.checkbox("Entendo que a importação substituirá meus aparelhos, cenários, tarifa e tema atuais.")
+    if st.button("Importar e substituir os dados", disabled=upload is None or not confirm):
+        try:
+            backup_path = STORE.restore_backup(upload.getvalue())
+        except (ValueError, StorageError, OSError) as exc:
+            st.error(str(exc))
+        else:
+            # Widget state from the old appearance must not override imported preference.
+            st.session_state.pop("appearance_choice", None)
+            show_success(f"Dados importados. Cópia de segurança anterior: {backup_path.name}")
+    st.divider()
+    st.subheader("Privacidade")
+    if BROWSER_MODE:
+        st.markdown(
+            "No GitHub Pages, o Python executa **dentro do navegador** (Stlite/WebAssembly). "
+            "Os arquivos ficam no armazenamento IndexedDB **deste navegador e desta origem**. "
+            "O PDF é processado em memória local e não é enviado a um servidor da aplicação. "
+            "Limpar dados do site, usar navegação anônima ou outro navegador pode apagar ou ocultar os dados. "
+            "Exporte um backup JSON regularmente. O navegador precisa baixar componentes de terceiros "
+            "(Stlite/Pyodide/dependências) para executar a aplicação."
+        )
+    else:
+        st.markdown(
+            "O Streamlit grava os arquivos **no computador que executa o servidor Python**, não necessariamente no "
+            "navegador. Este aplicativo é destinado a uso **local e individual**. Não publique uma instância aberta "
+            "na internet com dados pessoais: não há autenticação nem separação entre usuários. "
+            "Não enviamos dados para serviços externos pelo código do aplicativo."
+        )
