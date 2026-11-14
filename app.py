@@ -191,3 +191,28 @@ def tariff_form() -> None:
         "A fatura total ÷ kWh resulta em uma **tarifa média efetiva**, não necessariamente no preço marginal "
         "do próximo kWh. Pode incluir iluminação pública, impostos, custos fixos, descontos e ajustes."
     )
+
+
+def duration_inputs(prefix: str) -> tuple[float, int, float]:
+    """Offer one-click 1/8/24-hour examples and a customizable duration."""
+    choice = st.segmented_control(
+        "Horas de funcionamento", ["1 hora", "8 horas", "24 horas", "Personalizado"],
+        default="1 hora", key=f"{prefix}_duration", required=True,
+    )
+    hours = {"1 hora": 1.0, "8 horas": 8.0, "24 horas": 24.0}.get(choice)
+    if hours is None:
+        hours = st.number_input(
+            "Duração personalizada (horas)", min_value=0.0, max_value=8760.0,
+            value=3.0, step=0.25, key=f"{prefix}_custom_hours",
+        )
+    c1, c2 = st.columns(2)
+    quantity = c1.number_input(
+        "Quantidade de aparelhos", min_value=1, max_value=1000,
+        value=1, step=1, key=f"{prefix}_quantity",
+    )
+    percent = c2.slider(
+        "Carga média (%)", min_value=0, max_value=100, value=100, step=5,
+        help="100% = potência nominal durante todas as horas. 50% = metade da potência média.",
+        key=f"{prefix}_duty",
+    )
+    return float(hours), int(quantity), percent / 100
