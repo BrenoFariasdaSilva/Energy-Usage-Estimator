@@ -177,6 +177,16 @@ Or, if `pytest`, `pandas` and `plotly` are already installed:
 python -m pytest -q
 ```
 
+### Universal cross-platform verification
+
+After installing development dependencies, run every finite native and Pages check with the active Python interpreter:
+
+```text
+python scripts/verify.py
+```
+
+Use the same command in Windows PowerShell, Command Prompt, Linux shells, and macOS Terminal. On Windows where `python` is not on PATH, use `py -3 scripts/verify.py`. The command runs pytest, Ruff, compilation, Node checks, the Pages build, launcher diagnostics, and a CLI estimate without shell globbing. Browser fixtures are optional because Playwright and its managed Chromium are not runtime dependencies; install them with `python -m pip install playwright` and `python -m playwright install chromium`, then run `python scripts/verify.py --browser`. Both fixture scripts use Playwright's managed Chromium by default; `--chromium PATH` is available only for an explicit local override.
+
 For source linting after installing `ruff`:
 
 ```bash
