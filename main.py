@@ -10,7 +10,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from energy_estimator.calculations import cost_for_hours, format_brl, format_number, totals, estimate_scenario  # noqa: E402
+from energy_estimator.calculations import (  # noqa: E402
+    cost_for_hours,
+    estimate_scenario,
+    format_brl,
+    format_number,
+    totals,
+)
 from energy_estimator.models import Device, Tariff, new_id  # noqa: E402
 from energy_estimator.storage import JsonStore, StorageError, data_directory  # noqa: E402
 

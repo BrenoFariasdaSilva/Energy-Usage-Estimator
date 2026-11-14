@@ -11,8 +11,8 @@ from pypdf import PdfWriter
 
 from energy_estimator.bill_import import (
     BillImportError,
-    UnsupportedBillError,
     UnreadableBillError,
+    UnsupportedBillError,
     extract_copel_bill_text,
     parse_copel_pdf,
 )
@@ -118,10 +118,12 @@ def test_public_lighting_does_not_change_direct_unit_rate() -> None:
 
 
 def test_large_values_with_brazilian_thousands_separators() -> None:
-    txt = (HEADER.replace("R$192,72", "R$1.200,00") +
-           "ENERGIA ELET CONSUMO kWh 1.000 0,400000 400,00\n" +
-           "ENERGIA ELET USO SISTEMA kWh 1.000 0,500000 500,00\n" +
-           "TOTAL 1.200,00\n")
+    txt = (
+        HEADER.replace("R$192,72", "R$1.200,00")
+        + "ENERGIA ELET CONSUMO kWh 1.000 0,400000 400,00\n"
+        + "ENERGIA ELET USO SISTEMA kWh 1.000 0,500000 500,00\n"
+        + "TOTAL 1.200,00\n"
+    )
     parsed = extract_copel_bill_text(txt)
     assert parsed.billed_kwh == 1000
     assert parsed.total_brl == 1200
@@ -133,12 +135,15 @@ def test_duplicate_charge_rows_do_not_become_validated_price() -> None:
     assert parsed.method == "full_bill_average"
 
 
-@pytest.mark.parametrize("header", [
-    "DANF3E\nEnel Distribuicao\nCNPJ 61.695.227/0001-93\nCopel is mentioned in the footer\n",
-    "DANF3E\nCopel\n11/2026\n",
-    "COPEL DISTRIBUICAO S.A.\nCNPJ 04.368.898/0001-06\n",
-    "DANF3E\nCOPEL DISTRIBUICAO S.A.\nCNPJ 99.999.999/0001-99\n",
-])
+@pytest.mark.parametrize(
+    "header",
+    [
+        "DANF3E\nEnel Distribuicao\nCNPJ 61.695.227/0001-93\nCopel is mentioned in the footer\n",
+        "DANF3E\nCopel\n11/2026\n",
+        "COPEL DISTRIBUICAO S.A.\nCNPJ 04.368.898/0001-06\n",
+        "DANF3E\nCOPEL DISTRIBUICAO S.A.\nCNPJ 99.999.999/0001-99\n",
+    ],
+)
 def test_unsupported_or_unverified_provider_is_rejected(header: str) -> None:
     with pytest.raises(UnsupportedBillError, match="Somente PDFs"):
         extract_copel_bill_text(header + ENERGY + DISTRIBUTION + TOTAL)
@@ -211,9 +216,12 @@ def test_new_default_is_one_real_and_old_saved_data_remains_unchanged(tmp_path: 
 def test_imported_direct_tariff_persists_metadata_and_totals(tmp_path: Path) -> None:
     parsed = extract_copel_bill_text(BILL)
     imported = Tariff(
-        mode="direct", direct_rate=float(parsed.rate_brl_kwh),
-        bill_amount=float(parsed.total_brl), bill_kwh=float(parsed.billed_kwh),
-        source="copel_pdf", bill_reference=parsed.reference or "",
+        mode="direct",
+        direct_rate=float(parsed.rate_brl_kwh),
+        bill_amount=float(parsed.total_brl),
+        bill_kwh=float(parsed.billed_kwh),
+        source="copel_pdf",
+        bill_reference=parsed.reference or "",
     )
     store = JsonStore(tmp_path)
     store.save_tariff(imported)
@@ -226,8 +234,12 @@ def test_imported_direct_tariff_persists_metadata_and_totals(tmp_path: Path) -> 
 def test_imported_full_bill_tariff_persists_correct_mode(tmp_path: Path) -> None:
     parsed = extract_copel_bill_text(HEADER + METER + TOTAL)
     imported = Tariff(
-        mode="bill", direct_rate=1.0, bill_amount=float(parsed.total_brl),
-        bill_kwh=float(parsed.billed_kwh), source="copel_pdf", bill_reference="11/2026",
+        mode="bill",
+        direct_rate=1.0,
+        bill_amount=float(parsed.total_brl),
+        bill_kwh=float(parsed.billed_kwh),
+        source="copel_pdf",
+        bill_reference="11/2026",
     )
     store = JsonStore(tmp_path)
     store.save_tariff(imported)
@@ -241,8 +253,10 @@ def test_old_format_backup_is_compatible(tmp_path: Path) -> None:
     import json
 
     (tmp_path / "settings.json").write_text(
-        json.dumps({"schema_version": 1, "tariff": {"mode": "direct", "direct_rate": 0.85,
-                                                  "bill_amount": 0, "bill_kwh": 0}}), encoding="utf-8"
+        json.dumps(
+            {"schema_version": 1, "tariff": {"mode": "direct", "direct_rate": 0.85, "bill_amount": 0, "bill_kwh": 0}}
+        ),
+        encoding="utf-8",
     )
     assert JsonStore(tmp_path).load_tariff() == Tariff(direct_rate=0.85)
 

@@ -16,7 +16,7 @@ from energy_estimator.calculations import (
     hours_from_duration,
     totals,
 )
-from energy_estimator.models import Device, UsageItem
+from energy_estimator.models import Device, Scenario, UsageItem
 
 
 def test_one_eight_twentyfour_hours(fan: Device) -> None:

@@ -31,14 +31,32 @@ class ThemeColors:
 
 THEMES = {
     "light": ThemeColors(
-        background="#F5F9FE", sidebar="#EAF2FB", surface="#FFFFFF", surface_alt="#EFF6FF",
-        text="#14283D", muted="#52677F", border="#CBDCEC", accent="#087FC4",
-        accent_hover="#05669F", accent_label="#FFFFFF", tint="#DCEFFF", grid="#DDE9F5",
+        background="#F5F9FE",
+        sidebar="#EAF2FB",
+        surface="#FFFFFF",
+        surface_alt="#EFF6FF",
+        text="#14283D",
+        muted="#52677F",
+        border="#CBDCEC",
+        accent="#087FC4",
+        accent_hover="#05669F",
+        accent_label="#FFFFFF",
+        tint="#DCEFFF",
+        grid="#DDE9F5",
     ),
     "dark": ThemeColors(
-        background="#0B121C", sidebar="#121E2C", surface="#142333", surface_alt="#1B3045",
-        text="#F1F7FF", muted="#B5C8DC", border="#304A63", accent="#32A9EF",
-        accent_hover="#1385CD", accent_label="#071B2B", tint="#153A58", grid="#2A4158",
+        background="#0B121C",
+        sidebar="#121E2C",
+        surface="#142333",
+        surface_alt="#1B3045",
+        text="#F1F7FF",
+        muted="#B5C8DC",
+        border="#304A63",
+        accent="#32A9EF",
+        accent_hover="#1385CD",
+        accent_label="#071B2B",
+        tint="#153A58",
+        grid="#2A4158",
     ),
 }
 
@@ -285,13 +303,15 @@ _THEME_RULES = """
         background-color: var(--eue-surface-alt) !important;
         color: var(--eue-text) !important;
     }
-    [data-testid="stApp"] [data-testid="stFileUploaderFile"] div:not([data-testid="stFileUploaderFileIcon"]):not([data-testid="stFileUploaderFileIcon"] *) {
+    [data-testid="stApp"] [data-testid="stFileUploaderFile"]
+    div:not([data-testid="stFileUploaderFileIcon"]):not([data-testid="stFileUploaderFileIcon"] *) {
         background-color: transparent !important;
         color: var(--eue-text) !important;
     }
     /* Some Streamlit versions paint a pill around the details themselves. */
     [data-testid="stApp"] [data-testid="stFileUploaderFileData"],
-    [data-testid="stApp"] [data-testid="stFileUploaderFile"] :is(button, span):has([data-testid="stFileUploaderFileName"]) {
+    [data-testid="stApp"] [data-testid="stFileUploaderFile"]
+    :is(button, span):has([data-testid="stFileUploaderFileName"]) {
         background-color: transparent !important;
         color: var(--eue-text) !important;
     }
@@ -368,10 +388,14 @@ def theme_css(theme: str) -> str:
     if theme not in THEMES:
         raise ValueError("Tema desconhecido.")
     return (
-        "<style>\n" + _THEME_PALETTE_CSS + _THEME_RULES + "\n</style>"
+        "<style>\n"
+        + _THEME_PALETTE_CSS
+        + _THEME_RULES
+        + "\n</style>"
         + f'<span id="eue-active-theme" data-theme="{escape(theme)}" '
         + 'hidden aria-hidden="true"></span>'
     )
+
 
 def browser_theme_marker(theme: str) -> str:
     """Expose the saved browser appearance without injecting a competing stylesheet.

@@ -70,7 +70,9 @@ class Device:
         """Validate and parse one device from persisted JSON."""
         if not isinstance(data, dict):
             raise ValueError("Aparelho deve ser um objeto JSON.")
-        return cls(**{key: data[key] for key in ("id", "name", "category", "watts", "standby_watts", "notes") if key in data})
+        return cls(
+            **{key: data[key] for key in ("id", "name", "category", "watts", "standby_watts", "notes") if key in data}
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Serialize the device into a JSON-compatible dictionary."""
@@ -102,9 +104,13 @@ class UsageItem:
         """Validate and parse one usage schedule from JSON."""
         if not isinstance(data, dict):
             raise ValueError("Item do cenário deve ser um objeto JSON.")
-        return cls(**{key: data[key] for key in (
-            "device_id", "hours_per_day", "days_per_week", "quantity", "duty_cycle", "include_standby"
-        ) if key in data})
+        return cls(
+            **{
+                key: data[key]
+                for key in ("device_id", "hours_per_day", "days_per_week", "quantity", "duty_cycle", "include_standby")
+                if key in data
+            }
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Serialize a usage schedule."""
@@ -144,8 +150,12 @@ class Scenario:
 
     def to_dict(self) -> dict[str, object]:
         """Serialize a complete scenario using JSON arrays for its usage items."""
-        return {"id": self.id, "name": self.name, "description": self.description,
-                "items": [item.to_dict() for item in self.items]}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "items": [item.to_dict() for item in self.items],
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -164,7 +174,9 @@ class Tariff:
             raise ValueError("Modo de tarifa inválido.")
         if self.source not in ("manual", "copel_pdf"):
             raise ValueError("Origem da tarifa inválida.")
-        if not isinstance(self.bill_reference, str) or (self.bill_reference and not re.fullmatch(r"(?:0[1-9]|1[0-2])/20\d{2}", self.bill_reference)):
+        if not isinstance(self.bill_reference, str) or (
+            self.bill_reference and not re.fullmatch(r"(?:0[1-9]|1[0-2])/20\d{2}", self.bill_reference)
+        ):
             raise ValueError("Referência da fatura inválida.")
         _number(self.direct_rate, "Tarifa (R$/kWh)", maximum=1000)
         _number(self.bill_amount, "Valor da fatura (R$)", maximum=10_000_000)
@@ -184,7 +196,13 @@ class Tariff:
         """Load a persisted tariff, validating all values."""
         if not isinstance(data, dict):
             raise ValueError("A configuração da tarifa deve ser um objeto JSON.")
-        return cls(**{key: data[key] for key in ("mode", "direct_rate", "bill_amount", "bill_kwh", "source", "bill_reference") if key in data})
+        return cls(
+            **{
+                key: data[key]
+                for key in ("mode", "direct_rate", "bill_amount", "bill_kwh", "source", "bill_reference")
+                if key in data
+            }
+        )
 
     def to_dict(self) -> dict[str, object]:
         """Serialize the tariff configuration."""

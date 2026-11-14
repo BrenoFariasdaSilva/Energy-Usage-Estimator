@@ -100,7 +100,11 @@ class JsonStore:
         try:
             self.directory.mkdir(parents=True, exist_ok=True)
             with tempfile.NamedTemporaryFile(
-                mode="w", encoding="utf-8", dir=self.directory, prefix=f".{name}-", suffix=".tmp",
+                mode="w",
+                encoding="utf-8",
+                dir=self.directory,
+                prefix=f".{name}-",
+                suffix=".tmp",
                 delete=False,
             ) as handle:
                 tmp_name = handle.name
@@ -214,11 +218,15 @@ class JsonStore:
         """Insert or update a scenario after validating its device references."""
         with _STORE_LOCK:
             scenarios = self.load_scenarios()
-            if any(other.name.casefold() == scenario.name.casefold() and other.id != scenario.id for other in scenarios):
+            if any(
+                other.name.casefold() == scenario.name.casefold() and other.id != scenario.id for other in scenarios
+            ):
                 raise ValueError("Já existe um cenário com esse nome.")
             updated = [item for item in scenarios if item.id != scenario.id] + [scenario]
             _validate_refs(self.load_devices(), updated)
-            self._write("scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in updated]})
+            self._write(
+                "scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in updated]}
+            )
 
     def delete_scenario(self, scenario_id: str) -> bool:
         """Delete a scenario without affecting its reusable devices."""
@@ -227,7 +235,9 @@ class JsonStore:
             updated = [item for item in scenarios if item.id != scenario_id]
             if len(updated) == len(scenarios):
                 return False
-            self._write("scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in updated]})
+            self._write(
+                "scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in updated]}
+            )
             return True
 
     def save_tariff(self, tariff: Tariff) -> None:
@@ -267,7 +277,9 @@ class JsonStore:
             # Re-write all canonical files, including missing files on a fresh install.
             self._write("devices", {"schema_version": SCHEMA_VERSION, "devices": [d.to_dict() for d in devices]})
             self._write("scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [s.to_dict() for s in scenarios]})
-            self._write("settings", {"schema_version": SCHEMA_VERSION, "tariff": tariff.to_dict(), "appearance": theme})
+            self._write(
+                "settings", {"schema_version": SCHEMA_VERSION, "tariff": tariff.to_dict(), "appearance": theme}
+            )
             folder = self.directory / "backups"
             stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
             path = folder / f"manual-{stamp}.json"
@@ -318,16 +330,33 @@ class JsonStore:
 
             # Each file is atomically replaced. On failure, revert already-written files.
             try:
-                self._write("devices", {"schema_version": SCHEMA_VERSION, "devices": [item.to_dict() for item in devices]})
-                self._write("scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in scenarios]})
-                self._write("settings", {"schema_version": SCHEMA_VERSION, "tariff": tariff.to_dict(), "appearance": appearance})
+                self._write(
+                    "devices", {"schema_version": SCHEMA_VERSION, "devices": [item.to_dict() for item in devices]}
+                )
+                self._write(
+                    "scenarios",
+                    {"schema_version": SCHEMA_VERSION, "scenarios": [item.to_dict() for item in scenarios]},
+                )
+                self._write(
+                    "settings",
+                    {"schema_version": SCHEMA_VERSION, "tariff": tariff.to_dict(), "appearance": appearance},
+                )
             except StorageError as exc:
                 original = json.loads(old_state)
                 try:
                     self._write("devices", {"schema_version": SCHEMA_VERSION, "devices": original["devices"]})
                     self._write("scenarios", {"schema_version": SCHEMA_VERSION, "scenarios": original["scenarios"]})
-                    self._write("settings", {"schema_version": SCHEMA_VERSION, "tariff": original["tariff"], "appearance": original.get("appearance", DEFAULT_THEME)})
+                    self._write(
+                        "settings",
+                        {
+                            "schema_version": SCHEMA_VERSION,
+                            "tariff": original["tariff"],
+                            "appearance": original.get("appearance", DEFAULT_THEME),
+                        },
+                    )
                 except StorageError as rollback_exc:
-                    raise StorageError(f"Falha na importação e reversão: {rollback_exc}. Backup: {backup_path}") from exc
+                    raise StorageError(
+                        f"Falha na importação e reversão: {rollback_exc}. Backup: {backup_path}"
+                    ) from exc
                 raise
             return backup_path

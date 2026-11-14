@@ -13,6 +13,7 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from energy_estimator.bill_import import BillImportError, CopelBill, parse_copel_pdf  # noqa: E402
 from energy_estimator.calculations import (  # noqa: E402
     cost_for_hours,
     estimate_scenario,
@@ -28,14 +29,18 @@ from energy_estimator.charts import (  # noqa: E402
     scenario_period_bar,
 )
 from energy_estimator.models import Device, Scenario, Tariff, UsageItem, new_id  # noqa: E402
-from energy_estimator.bill_import import BillImportError, CopelBill, parse_copel_pdf  # noqa: E402
 from energy_estimator.presets import example_devices  # noqa: E402
 from energy_estimator.storage import JsonStore, StorageError, data_directory, is_browser_runtime  # noqa: E402
 from energy_estimator.ui_theme import browser_theme_marker, style_chart, theme_css  # noqa: E402
 
 BROWSER_MODE = is_browser_runtime()
 
-st.set_page_config(page_title="Energy Usage Estimator", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(
+    page_title="Energy Usage Estimator",
+    page_icon="⚡",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 
 STORE = JsonStore(data_directory(ROOT))
@@ -108,7 +113,10 @@ def copel_pdf_import() -> None:
         if parsed.energy_unit_price is not None:
             st.write(f"Preço de energia (com tributos): R$ {format_number(float(parsed.energy_unit_price), 6)}/kWh")
         if parsed.distribution_unit_price is not None:
-            st.write(f"Preço de distribuição (com tributos): R$ {format_number(float(parsed.distribution_unit_price), 6)}/kWh")
+            st.write(
+                "Preço de distribuição (com tributos): "
+                f"R$ {format_number(float(parsed.distribution_unit_price), 6)}/kWh"
+            )
         if parsed.public_lighting_brl is not None:
             st.write(f"Iluminação pública na fatura: {format_brl(float(parsed.public_lighting_brl))}")
         if parsed.method == "full_bill_average":
@@ -157,8 +165,12 @@ def tariff_form() -> None:
     with st.form("tariff_form"):
         if mode == "direct":
             direct = st.number_input(
-                "Preço de 1 kWh (R$)", min_value=0.0, max_value=1000.0,
-                value=float(TARIFF.direct_rate), step=0.01, format="%.6f",
+                "Preço de 1 kWh (R$)",
+                min_value=0.0,
+                max_value=1000.0,
+                value=float(TARIFF.direct_rate),
+                step=0.01,
+                format="%.6f",
                 help="Valor padrão (sem dados salvos): R$ 1,00/kWh. Não confundir kWh com kW.",
             )
             amount = TARIFF.bill_amount
@@ -167,13 +179,21 @@ def tariff_form() -> None:
             left, right = st.columns(2)
             with left:
                 amount = st.number_input(
-                    "Valor total da fatura (R$)", min_value=0.0, max_value=10_000_000.0,
-                    value=float(TARIFF.bill_amount), step=10.0, format="%.2f",
+                    "Valor total da fatura (R$)",
+                    min_value=0.0,
+                    max_value=10_000_000.0,
+                    value=float(TARIFF.bill_amount),
+                    step=10.0,
+                    format="%.2f",
                 )
             with right:
                 kwh = st.number_input(
-                    "Consumo mostrado na fatura (kWh)", min_value=0.0, max_value=10_000_000.0,
-                    value=float(TARIFF.bill_kwh), step=10.0, format="%.2f",
+                    "Consumo mostrado na fatura (kWh)",
+                    min_value=0.0,
+                    max_value=10_000_000.0,
+                    value=float(TARIFF.bill_kwh),
+                    step=10.0,
+                    format="%.2f",
                 )
             direct = TARIFF.direct_rate
             if kwh > 0:
@@ -182,11 +202,15 @@ def tariff_form() -> None:
                 st.warning("Informe um consumo maior que zero para calcular a tarifa.")
         submitted = st.form_submit_button("Salvar tarifa", type="primary", use_container_width=True)
     if submitted:
-        save_or_warn(lambda: STORE.save_tariff(Tariff(mode, float(direct), float(amount), float(kwh))),
-                     "Tarifa salva nos arquivos locais.")
+        save_or_warn(
+            lambda: STORE.save_tariff(Tariff(mode, float(direct), float(amount), float(kwh))),
+            "Tarifa salva nos arquivos locais.",
+        )
     if TARIFF.source == "copel_pdf":
-        st.caption(f"Tarifa salva a partir de PDF da Copel"
-                   f"{f' — referência {TARIFF.bill_reference}' if TARIFF.bill_reference else ''}.")
+        st.caption(
+            f"Tarifa salva a partir de PDF da Copel"
+            f"{f' — referência {TARIFF.bill_reference}' if TARIFF.bill_reference else ''}."
+        )
     st.caption(
         "A fatura total ÷ kWh resulta em uma **tarifa média efetiva**, não necessariamente no preço marginal "
         "do próximo kWh. Pode incluir iluminação pública, impostos, custos fixos, descontos e ajustes."
@@ -196,22 +220,37 @@ def tariff_form() -> None:
 def duration_inputs(prefix: str) -> tuple[float, int, float]:
     """Offer one-click 1/8/24-hour examples and a customizable duration."""
     choice = st.segmented_control(
-        "Horas de funcionamento", ["1 hora", "8 horas", "24 horas", "Personalizado"],
-        default="1 hora", key=f"{prefix}_duration", required=True,
+        "Horas de funcionamento",
+        ["1 hora", "8 horas", "24 horas", "Personalizado"],
+        default="1 hora",
+        key=f"{prefix}_duration",
+        required=True,
     )
     hours = {"1 hora": 1.0, "8 horas": 8.0, "24 horas": 24.0}.get(choice)
     if hours is None:
         hours = st.number_input(
-            "Duração personalizada (horas)", min_value=0.0, max_value=8760.0,
-            value=3.0, step=0.25, key=f"{prefix}_custom_hours",
+            "Duração personalizada (horas)",
+            min_value=0.0,
+            max_value=8760.0,
+            value=3.0,
+            step=0.25,
+            key=f"{prefix}_custom_hours",
         )
     c1, c2 = st.columns(2)
     quantity = c1.number_input(
-        "Quantidade de aparelhos", min_value=1, max_value=1000,
-        value=1, step=1, key=f"{prefix}_quantity",
+        "Quantidade de aparelhos",
+        min_value=1,
+        max_value=1000,
+        value=1,
+        step=1,
+        key=f"{prefix}_quantity",
     )
     percent = c2.slider(
-        "Carga média (%)", min_value=0, max_value=100, value=100, step=5,
+        "Carga média (%)",
+        min_value=0,
+        max_value=100,
+        value=100,
+        step=5,
         help="100% = potência nominal durante todas as horas. 50% = metade da potência média.",
         key=f"{prefix}_duty",
     )
@@ -225,7 +264,8 @@ def quick_calc() -> None:
         st.info("Cadastre um aparelho em 'Aparelhos' ou adicione exemplos para começar.")
         return
     selected_id = st.selectbox(
-        "Aparelho", [device.id for device in DEVICES],
+        "Aparelho",
+        [device.id for device in DEVICES],
         format_func=lambda item: device_label(next(device for device in DEVICES if device.id == item)),
         key="quick_device",
     )
@@ -252,7 +292,8 @@ def dashboard_page() -> None:
         <h1>Energy Usage Estimator</h1>
         <p>Explore custos de energia, compare aparelhos e planeje rotinas de consumo.
         Seus aparelhos, cenários e preferências permanecem salvos localmente em JSON.</p>
-        </div>""", unsafe_allow_html=True,
+        </div>""",
+        unsafe_allow_html=True,
     )
     a, b, c = st.columns(3)
     a.metric("Aparelhos cadastrados", len(DEVICES))
@@ -269,9 +310,14 @@ def dashboard_page() -> None:
     rows = []
     for scenario in SCENARIOS:
         summary = totals(estimate_scenario(scenario, DEVICES, TARIFF.rate))
-        rows.append({"Cenário": scenario.name, "Aparelhos": len(scenario.items),
-                     "kWh / 30 dias": round(summary["monthly_kwh"], 3),
-                     "R$ / 30 dias": round(summary["monthly_cost"], 2)})
+        rows.append(
+            {
+                "Cenário": scenario.name,
+                "Aparelhos": len(scenario.items),
+                "kWh / 30 dias": round(summary["monthly_kwh"], 3),
+                "R$ / 30 dias": round(summary["monthly_cost"], 2),
+            }
+        )
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
     st.caption("Um mês equivale a 30 dias; uso em dias da semana é convertido por média de 30/7 semanas.")
 
@@ -279,15 +325,21 @@ def dashboard_page() -> None:
 def devices_page() -> None:
     """Manage reusable appliances and editable example wattages."""
     header("Aparelhos", "Cadastre a potência em watts de seus eletrônicos e eletrodomésticos.")
-    st.warning("As potências de catálogo são apenas ilustrativas. Use a etiqueta, manual ou medidor de tomada para estimativas melhores.", icon="ℹ️")
+    st.warning(
+        "As potências de catálogo são apenas ilustrativas. Use a etiqueta, manual ou medidor de "
+        "tomada para estimativas melhores.",
+        icon="ℹ️",
+    )
     if st.button("Adicionar aparelhos de exemplo não cadastrados"):
         pending = example_devices(DEVICES)
         if not pending:
             st.info("Todos os exemplos já estão cadastrados.")
         else:
+
             def insert_presets() -> None:
                 for device in pending:
                     STORE.upsert_device(device)
+
             save_or_warn(insert_presets, f"{len(pending)} aparelhos de exemplo adicionados.")
 
     tab_add, tab_edit = st.tabs(["Cadastrar", "Editar ou excluir"])
@@ -296,47 +348,79 @@ def devices_page() -> None:
             name = st.text_input("Nome do aparelho", placeholder="Ex.: Computador gamer")
             category = st.text_input("Categoria", value="Informática")
             c1, c2 = st.columns(2)
-            watts = c1.number_input("Potência ativa (W)", min_value=0.001, max_value=1_000_000.0,
-                                    value=300.0, step=10.0, format="%.3f")
-            standby = c2.number_input("Potência em espera (W)", min_value=0.0, max_value=1_000_000.0,
-                                      value=0.0, step=0.5, format="%.3f")
+            watts = c1.number_input(
+                "Potência ativa (W)", min_value=0.001, max_value=1_000_000.0, value=300.0, step=10.0, format="%.3f"
+            )
+            standby = c2.number_input(
+                "Potência em espera (W)", min_value=0.0, max_value=1_000_000.0, value=0.0, step=0.5, format="%.3f"
+            )
             notes = st.text_area("Observações (opcional)", max_chars=500)
             create = st.form_submit_button("Salvar novo aparelho", type="primary")
         if create:
-            save_or_warn(lambda: STORE.upsert_device(Device(new_id(), name, category, watts, standby, notes)),
-                         "Aparelho cadastrado.")
+            save_or_warn(
+                lambda: STORE.upsert_device(Device(new_id(), name, category, watts, standby, notes)),
+                "Aparelho cadastrado.",
+            )
 
     with tab_edit:
         if not DEVICES:
             st.info("Ainda não há aparelhos para editar.")
         else:
-            chosen_id = st.selectbox("Selecionar aparelho", [device.id for device in DEVICES],
-                                     format_func=lambda value: device_label(next(d for d in DEVICES if d.id == value)))
+            chosen_id = st.selectbox(
+                "Selecionar aparelho",
+                [device.id for device in DEVICES],
+                format_func=lambda value: device_label(next(d for d in DEVICES if d.id == value)),
+            )
             current = next(device for device in DEVICES if device.id == chosen_id)
             with st.form(f"edit_device_{chosen_id}"):
                 name = st.text_input("Nome", value=current.name)
                 category = st.text_input("Categoria", value=current.category)
                 c1, c2 = st.columns(2)
-                watts = c1.number_input("Potência ativa (W)", min_value=0.001, max_value=1_000_000.0,
-                                        value=float(current.watts), step=10.0, format="%.3f")
-                standby = c2.number_input("Potência em espera (W)", min_value=0.0, max_value=1_000_000.0,
-                                          value=float(current.standby_watts), step=0.5, format="%.3f")
+                watts = c1.number_input(
+                    "Potência ativa (W)",
+                    min_value=0.001,
+                    max_value=1_000_000.0,
+                    value=float(current.watts),
+                    step=10.0,
+                    format="%.3f",
+                )
+                standby = c2.number_input(
+                    "Potência em espera (W)",
+                    min_value=0.0,
+                    max_value=1_000_000.0,
+                    value=float(current.standby_watts),
+                    step=0.5,
+                    format="%.3f",
+                )
                 notes = st.text_area("Observações", value=current.notes, max_chars=500)
                 update = st.form_submit_button("Atualizar aparelho", type="primary")
             if update:
-                save_or_warn(lambda: STORE.upsert_device(Device(current.id, name, category, watts, standby, notes)),
-                             "Aparelho atualizado. Cenários vinculados foram recalculados.")
+                save_or_warn(
+                    lambda: STORE.upsert_device(Device(current.id, name, category, watts, standby, notes)),
+                    "Aparelho atualizado. Cenários vinculados foram recalculados.",
+                )
             st.divider()
             confirm = st.checkbox(f"Confirmo a exclusão de '{current.name}'", key=f"delete_device_confirm_{chosen_id}")
             if st.button("Excluir aparelho", disabled=not confirm, key=f"delete_device_{chosen_id}"):
                 save_or_warn(lambda: STORE.delete_device(chosen_id), "Aparelho excluído.")
-            st.caption("Se o aparelho estiver em um cenário, remova-o do cenário primeiro. A exclusão não ocorre automaticamente.")
+            st.caption(
+                "Se o aparelho estiver em um cenário, remova-o do cenário primeiro. "
+                "A exclusão não ocorre automaticamente."
+            )
 
     st.divider()
     st.subheader(f"Biblioteca local ({len(DEVICES)})")
     if DEVICES:
-        rows = [{"Nome": d.name, "Categoria": d.category, "Potência (W)": d.watts,
-                 "Em espera (W)": d.standby_watts, "Observações": d.notes} for d in DEVICES]
+        rows = [
+            {
+                "Nome": d.name,
+                "Categoria": d.category,
+                "Potência (W)": d.watts,
+                "Em espera (W)": d.standby_watts,
+                "Observações": d.notes,
+            }
+            for d in DEVICES
+        ]
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
 
@@ -350,10 +434,19 @@ def calculator_page() -> None:
     rows = []
     for device in DEVICES:
         kwh, cost = cost_for_hours(device, hours, TARIFF.rate, quantity=qty, duty_cycle=duty)
-        rows.append({"Aparelho": device.name, "Categoria": device.category,
-                     "Potência (W)": device.watts, "Energia (kWh)": round(kwh, 4), "Custo (R$)": round(cost, 4)})
+        rows.append(
+            {
+                "Aparelho": device.name,
+                "Categoria": device.category,
+                "Potência (W)": device.watts,
+                "Energia (kWh)": round(kwh, 4),
+                "Custo (R$)": round(cost, 4),
+            }
+        )
     rows.sort(key=lambda item: item["Custo (R$)"], reverse=True)
-    st.caption(f"Tarifa: R$ {format_number(TARIFF.rate, 4)}/kWh. Exemplo de uso por {format_number(hours)} horas, sem espera.")
+    st.caption(
+        f"Tarifa: R$ {format_number(TARIFF.rate, 4)}/kWh. Exemplo de uso por {format_number(hours)} horas, sem espera."
+    )
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
     render_chart(cost_by_duration(rows))
     st.download_button("Baixar comparação (CSV)", rows_csv(rows), "comparacao-aparelhos.csv", "text/csv")
@@ -378,9 +471,13 @@ def scenario_select() -> Scenario | None:
     if created_id in options:
         st.session_state["scenario_pick"] = created_id
     selected = st.selectbox(
-        "Cenário", options, key="scenario_pick",
-        format_func=lambda item: "+ Criar novo cenário" if item == "__new__" else next(
-            scenario.name for scenario in SCENARIOS if scenario.id == item
+        "Cenário",
+        options,
+        key="scenario_pick",
+        format_func=lambda item: (
+            "+ Criar novo cenário"
+            if item == "__new__"
+            else next(scenario.name for scenario in SCENARIOS if scenario.id == item)
         ),
     )
     return next((scenario for scenario in SCENARIOS if scenario.id == selected), None)
@@ -389,15 +486,18 @@ def scenario_select() -> Scenario | None:
 def scenario_metadata(scenario: Scenario | None) -> None:
     """Create or rename a scenario while preserving saved schedules."""
     with st.form("scenario_details"):
-        name = st.text_input("Nome do cenário", value=scenario.name if scenario else "",
-                             placeholder="Ex.: Casa durante a semana")
-        description = st.text_area("Descrição (opcional)", value=scenario.description if scenario else "",
-                                    max_chars=500)
+        name = st.text_input(
+            "Nome do cenário", value=scenario.name if scenario else "", placeholder="Ex.: Casa durante a semana"
+        )
+        description = st.text_area(
+            "Descrição (opcional)", value=scenario.description if scenario else "", max_chars=500
+        )
         submitted = st.form_submit_button("Salvar cenário", type="primary")
     if submitted:
         try:
-            updated = Scenario(scenario.id if scenario else new_id(), name, description,
-                               scenario.items if scenario else tuple())
+            updated = Scenario(
+                scenario.id if scenario else new_id(), name, description, scenario.items if scenario else tuple()
+            )
             STORE.upsert_scenario(updated)
         except (ValueError, StorageError) as exc:
             st.error(str(exc))
@@ -413,48 +513,78 @@ def scenario_item_editor(scenario: Scenario) -> None:
         st.info("Cadastre ao menos um aparelho antes de configurar o uso.")
         return
     selected_id = st.selectbox(
-        "Aparelho a adicionar ou editar", [device.id for device in DEVICES],
+        "Aparelho a adicionar ou editar",
+        [device.id for device in DEVICES],
         format_func=lambda value: device_label(next(d for d in DEVICES if d.id == value)),
         key=f"scenario_device_{scenario.id}",
     )
     device = next(d for d in DEVICES if d.id == selected_id)
     stored = next((item for item in scenario.items if item.device_id == selected_id), None)
     time_unit = st.segmented_control(
-        "Unidade do tempo de uso", ["Horas", "Minutos"], default="Horas", required=True,
+        "Unidade do tempo de uso",
+        ["Horas", "Minutos"],
+        default="Horas",
+        required=True,
         key=f"scenario_time_unit_{scenario.id}_{selected_id}",
         help="Use minutos para durações curtas, como 10 ou 15 minutos de chuveiro.",
     )
     with st.form(f"item_form_{scenario.id}_{selected_id}_{time_unit}"):
         c1, c2, c3 = st.columns(3)
         if time_unit == "Minutos":
-            duration = c1.number_input("Minutos por dia", min_value=0.0, max_value=1440.0,
-                                       value=float(stored.hours_per_day * 60 if stored else 30),
-                                       step=5.0, format="%.2f")
+            duration = c1.number_input(
+                "Minutos por dia",
+                min_value=0.0,
+                max_value=1440.0,
+                value=float(stored.hours_per_day * 60 if stored else 30),
+                step=5.0,
+                format="%.2f",
+            )
         else:
-            duration = c1.number_input("Horas por dia", min_value=0.0, max_value=24.0,
-                                       value=float(stored.hours_per_day if stored else 2),
-                                       step=0.25, format="%.4f")
-        days = c2.number_input("Dias por semana", min_value=1, max_value=7,
-                               value=int(stored.days_per_week if stored else 7), step=1)
-        quantity = c3.number_input("Quantidade", min_value=1, max_value=1000,
-                                   value=int(stored.quantity if stored else 1), step=1)
-        duty = st.slider("Carga média / ciclo de funcionamento (%)", min_value=0, max_value=100,
-                         value=round(stored.duty_cycle * 100) if stored else 100, step=1,
-                         help="Útil para aparelhos cuja potência oscila (PC, geladeira, ar-condicionado). "
-                              "Use a fração de potência média, não uma garantia de consumo real.")
+            duration = c1.number_input(
+                "Horas por dia",
+                min_value=0.0,
+                max_value=24.0,
+                value=float(stored.hours_per_day if stored else 2),
+                step=0.25,
+                format="%.4f",
+            )
+        days = c2.number_input(
+            "Dias por semana", min_value=1, max_value=7, value=int(stored.days_per_week if stored else 7), step=1
+        )
+        quantity = c3.number_input(
+            "Quantidade", min_value=1, max_value=1000, value=int(stored.quantity if stored else 1), step=1
+        )
+        duty = st.slider(
+            "Carga média / ciclo de funcionamento (%)",
+            min_value=0,
+            max_value=100,
+            value=round(stored.duty_cycle * 100) if stored else 100,
+            step=1,
+            help="Útil para aparelhos cuja potência oscila (PC, geladeira, ar-condicionado). "
+            "Use a fração de potência média, não uma garantia de consumo real.",
+        )
         standby = st.checkbox(
             f"Incluir consumo em espera de {format_number(device.standby_watts, 2)} W nas demais horas da semana",
             value=stored.include_standby if stored else False,
-            help="Quando marcado, o aparelho fica em espera durante 168 - horas de uso da semana, inclusive nos dias sem uso.",
+            help=(
+                "Quando marcado, o aparelho fica em espera durante 168 - horas de uso da semana, "
+                "inclusive nos dias sem uso."
+            ),
         )
         submit = st.form_submit_button("Atualizar uso" if stored else "Adicionar ao cenário", type="primary")
     if submit:
+
         def save_schedule() -> None:
             hours = hours_from_duration(float(duration), "minutes" if time_unit == "Minutos" else "hours")
             new_item = UsageItem(selected_id, hours, int(days), int(quantity), duty / 100, standby)
-            updated = Scenario(scenario.id, scenario.name, scenario.description,
-                               tuple(item for item in scenario.items if item.device_id != selected_id) + (new_item,))
+            updated = Scenario(
+                scenario.id,
+                scenario.name,
+                scenario.description,
+                tuple(item for item in scenario.items if item.device_id != selected_id) + (new_item,),
+            )
             STORE.upsert_scenario(updated)
+
         save_or_warn(save_schedule, "Programação salva no cenário.")
 
 
@@ -475,43 +605,58 @@ def scenario_results(scenario: Scenario) -> None:
 
     rows = []
     for item, estimate in zip(scenario.items, estimated):
-        rows.append({
-            "Aparelho": estimate.device_name,
-            "Horas/dia": item.hours_per_day,
-            "Dias/semana": item.days_per_week,
-            "Quantidade": item.quantity,
-            "Carga (%)": round(item.duty_cycle * 100, 1),
-            "Espera": "Sim" if item.include_standby else "Não",
-            "kWh/semana": round(estimate.weekly_kwh, 3),
-            "kWh/30 dias": round(estimate.monthly_kwh, 3),
-            "R$/semana": round(estimate.weekly_cost, 2),
-            "R$/30 dias": round(estimate.monthly_cost, 2),
-            "R$/365 dias": round(estimate.annual_cost, 2),
-        })
+        rows.append(
+            {
+                "Aparelho": estimate.device_name,
+                "Horas/dia": item.hours_per_day,
+                "Dias/semana": item.days_per_week,
+                "Quantidade": item.quantity,
+                "Carga (%)": round(item.duty_cycle * 100, 1),
+                "Espera": "Sim" if item.include_standby else "Não",
+                "kWh/semana": round(estimate.weekly_kwh, 3),
+                "kWh/30 dias": round(estimate.monthly_kwh, 3),
+                "R$/semana": round(estimate.weekly_cost, 2),
+                "R$/30 dias": round(estimate.monthly_cost, 2),
+                "R$/365 dias": round(estimate.annual_cost, 2),
+            }
+        )
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-    st.download_button("Exportar itens e valores (CSV)", rows_csv(rows),
-                       f"cenario-{scenario.id}.csv", "text/csv", key=f"csv_{scenario.id}")
+    st.download_button(
+        "Exportar itens e valores (CSV)",
+        rows_csv(rows),
+        f"cenario-{scenario.id}.csv",
+        "text/csv",
+        key=f"csv_{scenario.id}",
+    )
     view = st.segmented_control(
-        "Período dos gráficos de custo", ["Semana", "30 dias", "365 dias"],
-        default="30 dias", required=True, key=f"scenario_chart_period_{scenario.id}",
+        "Período dos gráficos de custo",
+        ["Semana", "30 dias", "365 dias"],
+        default="30 dias",
+        required=True,
+        key=f"scenario_chart_period_{scenario.id}",
     )
     period = {"Semana": "week", "30 dias": "month", "365 dias": "year"}[view]
-    l, r = st.columns(2)
-    with l:
+    left, right = st.columns(2)
+    with left:
         render_chart(scenario_period_bar(estimated, period))
-    with r:
+    with right:
         if any(row.monthly_kwh > 0 for row in estimated):
             render_chart(scenario_energy_donut(estimated))
         else:
             st.info("Não há energia positiva para apresentar no gráfico de participação.")
-    st.caption("Fórmula semanal: (W × horas/dia × dias/semana × quantidade × carga média) / 1.000; "
-               "se habilitada, espera = W de espera × (168 − horas ativas/semana) × quantidade / 1.000. "
-               "Mês = semana × 30/7; ano = semana × 365/7.")
+    st.caption(
+        "Fórmula semanal: (W × horas/dia × dias/semana × quantidade × carga média) / 1.000; "
+        "se habilitada, espera = W de espera × (168 − horas ativas/semana) × quantidade / 1.000. "
+        "Mês = semana × 30/7; ano = semana × 365/7."
+    )
 
 
 def scenarios_page() -> None:
     """Build, edit, compare and delete persistent multi-device schedules."""
-    header("Cenários de uso", "Combine aparelhos, quantidade, horas por dia e dias por semana. Os cenários ficam salvos em JSON.")
+    header(
+        "Cenários de uso",
+        "Combine aparelhos, quantidade, horas por dia e dias por semana. Os cenários ficam salvos em JSON.",
+    )
     scenario = scenario_select()
     scenario_metadata(scenario)
     if scenario is None:
@@ -523,19 +668,30 @@ def scenarios_page() -> None:
         known = {device.id: device for device in DEVICES}
         for item in scenario.items:
             left, right = st.columns([5, 1], vertical_alignment="center")
-            left.write(f"**{known[item.device_id].name}** — {format_number(item.hours_per_day)} h/dia, "
-                       f"{item.days_per_week} dias/semana, {item.quantity} un.")
+            left.write(
+                f"**{known[item.device_id].name}** — {format_number(item.hours_per_day)} h/dia, "
+                f"{item.days_per_week} dias/semana, {item.quantity} un."
+            )
             if right.button("Remover", key=f"remove_item_{scenario.id}_{item.device_id}"):
-                updated = Scenario(scenario.id, scenario.name, scenario.description,
-                                   tuple(other for other in scenario.items if other.device_id != item.device_id))
+                updated = Scenario(
+                    scenario.id,
+                    scenario.name,
+                    scenario.description,
+                    tuple(other for other in scenario.items if other.device_id != item.device_id),
+                )
                 save_or_warn(lambda: STORE.upsert_scenario(updated), "Aparelho removido do cenário.")
     scenario_results(scenario)
     st.divider()
-    confirm = st.checkbox(f"Quero excluir definitivamente o cenário '{scenario.name}'", key=f"del_scn_ok_{scenario.id}")
+    confirm = st.checkbox(
+        f"Quero excluir definitivamente o cenário '{scenario.name}'",
+        key=f"del_scn_ok_{scenario.id}",
+    )
     if st.button("Excluir cenário", disabled=not confirm, key=f"del_scn_{scenario.id}"):
+
         def delete_selected() -> None:
             STORE.delete_scenario(scenario.id)
             st.session_state["next_scenario_id"] = "__new__"
+
         save_or_warn(delete_selected, "Cenário excluído. Os aparelhos cadastrados foram preservados.")
 
 
@@ -548,10 +704,15 @@ def comparison_page() -> None:
     rows: list[dict[str, float | str]] = []
     for scenario in SCENARIOS:
         amount = totals(estimate_scenario(scenario, DEVICES, TARIFF.rate))
-        rows.append({"Cenário": scenario.name, "Semanal (R$)": round(amount["weekly_cost"], 2),
-                     "Mensal (R$)": round(amount["monthly_cost"], 2),
-                     "Anual (R$)": round(amount["annual_cost"], 2),
-                     "Mensal (kWh)": round(amount["monthly_kwh"], 3)})
+        rows.append(
+            {
+                "Cenário": scenario.name,
+                "Semanal (R$)": round(amount["weekly_cost"], 2),
+                "Mensal (R$)": round(amount["monthly_cost"], 2),
+                "Anual (R$)": round(amount["annual_cost"], 2),
+                "Mensal (kWh)": round(amount["monthly_kwh"], 3),
+            }
+        )
     st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
     if any(row["Mensal (R$)"] > 0 for row in rows):
         render_chart(scenario_comparison(rows))
@@ -560,9 +721,17 @@ def comparison_page() -> None:
         st.subheader("Diferença entre alternativas")
         left, right = st.columns(2)
         ids = [item.id for item in SCENARIOS]
-        baseline_id = left.selectbox("Cenário atual", ids, format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item))
-        candidate_id = right.selectbox("Cenário alternativo", ids, index=1,
-                                       format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item))
+        baseline_id = left.selectbox(
+            "Cenário atual",
+            ids,
+            format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item),
+        )
+        candidate_id = right.selectbox(
+            "Cenário alternativo",
+            ids,
+            index=1,
+            format_func=lambda item: next(s.name for s in SCENARIOS if s.id == item),
+        )
         if baseline_id == candidate_id:
             st.info("Selecione dois cenários diferentes.")
         else:
@@ -571,9 +740,13 @@ def comparison_page() -> None:
             before = totals(estimate_scenario(baseline, DEVICES, TARIFF.rate))
             after = totals(estimate_scenario(candidate, DEVICES, TARIFF.rate))
             delta = before["monthly_cost"] - after["monthly_cost"]
-            st.metric("Economia mensal estimada (positivo = economia)",
-                      f"{'-' if delta < 0 else ''}{format_brl(abs(delta))}")
-            st.metric("Economia anual estimada", f"{'-' if delta < 0 else ''}{format_brl(abs(before['annual_cost'] - after['annual_cost']))}")
+            st.metric(
+                "Economia mensal estimada (positivo = economia)", f"{'-' if delta < 0 else ''}{format_brl(abs(delta))}"
+            )
+            st.metric(
+                "Economia anual estimada",
+                f"{'-' if delta < 0 else ''}{format_brl(abs(before['annual_cost'] - after['annual_cost']))}",
+            )
     st.caption("Cenários usam a mesma tarifa atualmente salva. Alterá-la recalcula automaticamente todos os valores.")
 
 
@@ -582,8 +755,8 @@ def storage_page() -> None:
     header("Dados e backups", "Salvamento automático nos arquivos JSON, com cópias de segurança manuais e exportação.")
     st.markdown(
         '<div class="eue-status"><strong>Salvamento automático ativado.</strong> '
-        'Cada cadastro, atualização, exclusão ou tarifa confirmada é gravada em JSON imediatamente. '
-        'Os campos ainda não enviados nos formulários não são salvos.</div>',
+        "Cada cadastro, atualização, exclusão ou tarifa confirmada é gravada em JSON imediatamente. "
+        "Os campos ainda não enviados nos formulários não são salvos.</div>",
         unsafe_allow_html=True,
     )
     if BROWSER_MODE:
@@ -596,11 +769,15 @@ def storage_page() -> None:
     else:
         st.caption("Todos os dados ficam na pasta abaixo, no computador que executa a aplicação:")
     st.code(str(STORE.directory), language="text")
-    st.markdown("Arquivos: `devices.json`, `scenarios.json` e `settings.json` (tarifa e tema). "
-                "Arquivos de segurança: `backups/`.")
+    st.markdown(
+        "Arquivos: `devices.json`, `scenarios.json` e `settings.json` (tarifa e tema). "
+        "Arquivos de segurança: `backups/`."
+    )
     st.subheader("Salvar manualmente")
-    st.write("Crie agora um ponto de restauração. O aplicativo regrava os três JSONs "
-             "e mantém uma cópia com data e hora em `backups/`, sem substituir backups anteriores.")
+    st.write(
+        "Crie agora um ponto de restauração. O aplicativo regrava os três JSONs "
+        "e mantém uma cópia com data e hora em `backups/`, sem substituir backups anteriores."
+    )
     if st.button("Salvar dados agora (JSON + backup local)", key="manual_save_now", type="primary"):
         try:
             path = STORE.save_now()
@@ -611,10 +788,16 @@ def storage_page() -> None:
 
     st.divider()
     st.subheader("Exportar")
-    st.download_button("Baixar backup completo (JSON)", STORE.backup_bytes(),
-                       "energy-usage-estimator-backup.json", "application/json", key="download_full_backup")
-    st.caption("O download salva uma cópia onde você escolher no navegador; "
-               "não altera os JSONs nem substitui o backup local.")
+    st.download_button(
+        "Baixar backup completo (JSON)",
+        STORE.backup_bytes(),
+        "energy-usage-estimator-backup.json",
+        "application/json",
+        key="download_full_backup",
+    )
+    st.caption(
+        "O download salva uma cópia onde você escolher no navegador; não altera os JSONs nem substitui o backup local."
+    )
     st.divider()
     st.subheader("Restaurar backup")
     upload = st.file_uploader("Arquivo JSON exportado por este aplicativo", type=["json"], key="import_file")
@@ -653,9 +836,12 @@ with st.sidebar:
     st.title("Energy Usage Estimator")
     st.caption("Painel de estimativas de eletricidade")
     selected_theme = st.segmented_control(
-        "Aparência", ("light", "dark"), default=SAVED_THEME,
+        "Aparência",
+        ("light", "dark"),
+        default=SAVED_THEME,
         format_func=lambda value: "☀ Claro" if value == "light" else "◐ Escuro",
-        required=True, key="appearance_choice",
+        required=True,
+        key="appearance_choice",
     )
     if selected_theme != SAVED_THEME:
         try:
@@ -672,13 +858,17 @@ with st.sidebar:
     st.divider()
     st.metric("Tarifa atual", f"R$ {format_number(TARIFF.rate, 4)}/kWh")
     if TARIFF.source == "copel_pdf":
-        st.caption("Origem: PDF Copel (energia + distribuição)" if TARIFF.mode == "direct"
-                   else "Origem: PDF Copel (total ÷ kWh)")
+        st.caption(
+            "Origem: PDF Copel (energia + distribuição)"
+            if TARIFF.mode == "direct"
+            else "Origem: PDF Copel (total ÷ kWh)"
+        )
     else:
         st.caption("Origem: valor informado" if TARIFF.mode == "direct" else "Origem: fatura ÷ consumo")
     st.caption(f"{len(DEVICES)} aparelhos · {len(SCENARIOS)} cenários")
     st.caption(
-        "JSON salvo neste navegador · exporte backups" if BROWSER_MODE
+        "JSON salvo neste navegador · exporte backups"
+        if BROWSER_MODE
         else "Salvamento automático ativo · backup manual em Dados e backups"
     )
 

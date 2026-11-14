@@ -48,7 +48,9 @@ def pages_theme_stylesheet() -> str:
     if source["_THEME_PALETTE_CSS"].count(old) != 1:
         raise ValueError("O seletor do tema escuro mudou; revise o gerador de Pages.")
     palette = source["_THEME_PALETTE_CSS"].replace(old, ':root[data-eue-theme="dark"]')
-    return "/* Derived from ui_theme.py; do not edit the generated file. */\n" + palette + source["_THEME_RULES"] + "\n"
+    return (
+        "/* Derived from ui_theme.py; do not edit the generated file. */\n" + palette + source["_THEME_RULES"] + "\n"
+    )
 
 
 def build(output: Path) -> list[str]:
