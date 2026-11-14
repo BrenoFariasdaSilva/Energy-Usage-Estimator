@@ -358,3 +358,29 @@ def calculator_page() -> None:
     render_chart(cost_by_duration(rows))
     st.download_button("Baixar comparação (CSV)", rows_csv(rows), "comparacao-aparelhos.csv", "text/csv")
     st.info("Um chuveiro ligado por 24 horas é apenas um cenário matemático. Para uso realista, utilize 'Cenários'.")
+
+
+def rows_csv(rows: list[dict[str, object]]) -> bytes:
+    """Return a UTF-8 CSV with an Excel-friendly BOM for Portuguese text."""
+    if not rows:
+        return b""
+    output = io.StringIO(newline="")
+    writer = csv.DictWriter(output, fieldnames=list(rows[0]), delimiter=";")
+    writer.writeheader()
+    writer.writerows(rows)
+    return output.getvalue().encode("utf-8-sig")
+
+
+def scenario_select() -> Scenario | None:
+    """Select an existing scenario or choose the new-scenario editor."""
+    options = ["__new__", *[scenario.id for scenario in SCENARIOS]]
+    created_id = st.session_state.pop("next_scenario_id", None)
+    if created_id in options:
+        st.session_state["scenario_pick"] = created_id
+    selected = st.selectbox(
+        "Cenário", options, key="scenario_pick",
+        format_func=lambda item: "+ Criar novo cenário" if item == "__new__" else next(
+            scenario.name for scenario in SCENARIOS if scenario.id == item
+        ),
+    )
+    return next((scenario for scenario in SCENARIOS if scenario.id == selected), None)
