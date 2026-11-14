@@ -223,3 +223,34 @@ def test_manual_save_button_creates_checkpoint(monkeypatch, tmp_path) -> None:
     assert (tmp_path / "settings.json").exists()
     assert (tmp_path / "devices.json").exists()
     assert (tmp_path / "scenarios.json").exists()
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_theme_is_rendered_through_streamlit_html(monkeypatch, tmp_path, theme: str) -> None:
+    fake = show_page(monkeypatch, tmp_path, theme=theme)
+    assert len(fake.html_calls) == 1
+    assert fake.html_calls[0].startswith("<style>")
+    assert f'data-theme="{theme}"' in fake.html_calls[0]
+
+@pytest.mark.parametrize("page", [
+    "Início", "Aparelhos", "Calculadora", "Cenários", "Comparações", "Dados e backups",
+])
+def test_demo_data_all_pages_render_without_errors(monkeypatch, tmp_path, page: str) -> None:
+    """Exercise all routes with actual devices and scenarios, not only an empty store."""
+    demo = (ROOT / "examples/backup-demo.json").read_bytes()
+    JsonStore(tmp_path).restore_backup(demo)
+    fake = show_page(monkeypatch, tmp_path, page=page, theme="dark")
+    assert not [message for kind, message in fake.messages if kind == "error"]
+    assert len(JsonStore(tmp_path).load_devices()) > 0
+    assert len(JsonStore(tmp_path).load_scenarios()) > 0
+
+
+def test_browser_uses_static_host_css_but_native_keeps_inline_theme(monkeypatch, tmp_path) -> None:
+    from energy_estimator import storage
+    monkeypatch.setattr(storage, "is_browser_runtime", lambda: True)
+    fake = show_page(monkeypatch, tmp_path, theme="light")
+    assert any('id="eue-active-theme" data-theme="light"' in item for item in fake.html_calls)
+    assert all("<style>" not in item for item in fake.html_calls)
+    monkeypatch.setattr(storage, "is_browser_runtime", lambda: False)
+    normal = show_page(monkeypatch, tmp_path, theme="light")
+    assert any("<style>" in item for item in normal.html_calls)
