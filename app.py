@@ -384,3 +384,75 @@ def scenario_select() -> Scenario | None:
         ),
     )
     return next((scenario for scenario in SCENARIOS if scenario.id == selected), None)
+
+
+def scenario_metadata(scenario: Scenario | None) -> None:
+    """Create or rename a scenario while preserving saved schedules."""
+    with st.form("scenario_details"):
+        name = st.text_input("Nome do cenário", value=scenario.name if scenario else "",
+                             placeholder="Ex.: Casa durante a semana")
+        description = st.text_area("Descrição (opcional)", value=scenario.description if scenario else "",
+                                    max_chars=500)
+        submitted = st.form_submit_button("Salvar cenário", type="primary")
+    if submitted:
+        try:
+            updated = Scenario(scenario.id if scenario else new_id(), name, description,
+                               scenario.items if scenario else tuple())
+            STORE.upsert_scenario(updated)
+        except (ValueError, StorageError) as exc:
+            st.error(str(exc))
+        else:
+            st.session_state["next_scenario_id"] = updated.id
+            show_success("Cenário salvo.")
+
+
+def scenario_item_editor(scenario: Scenario) -> None:
+    """Add or update a selected appliance's weekday and average-load schedule."""
+    st.subheader("Programação dos aparelhos")
+    if not DEVICES:
+        st.info("Cadastre ao menos um aparelho antes de configurar o uso.")
+        return
+    selected_id = st.selectbox(
+        "Aparelho a adicionar ou editar", [device.id for device in DEVICES],
+        format_func=lambda value: device_label(next(d for d in DEVICES if d.id == value)),
+        key=f"scenario_device_{scenario.id}",
+    )
+    device = next(d for d in DEVICES if d.id == selected_id)
+    stored = next((item for item in scenario.items if item.device_id == selected_id), None)
+    time_unit = st.segmented_control(
+        "Unidade do tempo de uso", ["Horas", "Minutos"], default="Horas", required=True,
+        key=f"scenario_time_unit_{scenario.id}_{selected_id}",
+        help="Use minutos para durações curtas, como 10 ou 15 minutos de chuveiro.",
+    )
+    with st.form(f"item_form_{scenario.id}_{selected_id}_{time_unit}"):
+        c1, c2, c3 = st.columns(3)
+        if time_unit == "Minutos":
+            duration = c1.number_input("Minutos por dia", min_value=0.0, max_value=1440.0,
+                                       value=float(stored.hours_per_day * 60 if stored else 30),
+                                       step=5.0, format="%.2f")
+        else:
+            duration = c1.number_input("Horas por dia", min_value=0.0, max_value=24.0,
+                                       value=float(stored.hours_per_day if stored else 2),
+                                       step=0.25, format="%.4f")
+        days = c2.number_input("Dias por semana", min_value=1, max_value=7,
+                               value=int(stored.days_per_week if stored else 7), step=1)
+        quantity = c3.number_input("Quantidade", min_value=1, max_value=1000,
+                                   value=int(stored.quantity if stored else 1), step=1)
+        duty = st.slider("Carga média / ciclo de funcionamento (%)", min_value=0, max_value=100,
+                         value=round(stored.duty_cycle * 100) if stored else 100, step=1,
+                         help="Útil para aparelhos cuja potência oscila (PC, geladeira, ar-condicionado). "
+                              "Use a fração de potência média, não uma garantia de consumo real.")
+        standby = st.checkbox(
+            f"Incluir consumo em espera de {format_number(device.standby_watts, 2)} W nas demais horas da semana",
+            value=stored.include_standby if stored else False,
+            help="Quando marcado, o aparelho fica em espera durante 168 - horas de uso da semana, inclusive nos dias sem uso.",
+        )
+        submit = st.form_submit_button("Atualizar uso" if stored else "Adicionar ao cenário", type="primary")
+    if submit:
+        def save_schedule() -> None:
+            hours = hours_from_duration(float(duration), "minutes" if time_unit == "Minutos" else "hours")
+            new_item = UsageItem(selected_id, hours, int(days), int(quantity), duty / 100, standby)
+            updated = Scenario(scenario.id, scenario.name, scenario.description,
+                               tuple(item for item in scenario.items if item.device_id != selected_id) + (new_item,))
+            STORE.upsert_scenario(updated)
+        save_or_warn(save_schedule, "Programação salva no cenário.")
