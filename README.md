@@ -221,6 +221,36 @@ For a demo, import `examples/backup-demo.json`. **Warning:** Importing replaces 
 
 A 60 W fan running 8 hours/day at R$ 1.00/kWh consumes **0.48 kWh/day**, costing **R$ 0.48/day** or approximately **R$ 14.40 over 30 days**.
 
+## Mathematical model
+
+**Basic calculation:**
+
+```text
+kWh = (watts / 1000) × hours × quantity × load_factor
+cost = kWh × tariff_R$/kWh
+```
+
+**Scenario projections:**
+
+```text
+active_week_kWh = (watts / 1000) × hours_per_day
+                  × days_per_week × quantity × load_factor
+
+standby_week_kWh = (standby_watts / 1000)
+                   × (168 - active_hours_per_week) × quantity
+
+week_kWh = active_week_kWh + standby_week_kWh
+month_kWh = week_kWh × 30 / 7
+year_kWh = week_kWh × 365 / 7
+cost = kWh × tariff_R$/kWh
+```
+
+Standby consumption applies only when enabled. Monthly and annual estimates use average projections rather than exact calendar schedules.
+
+### Limitations
+
+Estimates depend on actual appliance consumption, usage and tariff accuracy. The application does not model complex tariffs, detailed taxation or real-time electricity measurements. Full-bill averages may include fixed charges and therefore differ from marginal electricity costs.
+
 ## License
 
 ### Apache License 2.0
