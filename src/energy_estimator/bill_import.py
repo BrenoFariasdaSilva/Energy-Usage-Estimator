@@ -221,3 +221,32 @@ def extract_copel_bill_text(text: str) -> CopelBill:
         distribution_amount=distribution.amount if distribution else None,
         public_lighting_brl=_public_lighting(normalized),
     )
+
+
+def parse_copel_pdf(raw: bytes) -> CopelBill:
+    """Open a small text-based PDF locally and parse page one only; no OCR."""
+    if not isinstance(raw, bytes) or not raw.startswith(b"%PDF-"):
+        raise UnreadableBillError("Arquivo inválido: envie um PDF original (não imagem renomeada como .pdf).")
+    if len(raw) > MAX_BILL_BYTES:
+        raise UnreadableBillError("O PDF excede o limite de 10 MB.")
+    try:
+        reader = PdfReader(io.BytesIO(raw), strict=False)
+        if reader.is_encrypted:
+            raise UnreadableBillError("PDF protegido por senha. Exporte uma cópia PDF sem proteção.")
+        pages = len(reader.pages)
+        if not 1 <= pages <= MAX_BILL_PAGES:
+            raise UnreadableBillError("São aceitos PDFs de 1 a 6 páginas.")
+        first_page = reader.pages[0]
+        page_text = (first_page.extract_text(extraction_mode="layout") or "") if "/Contents" in first_page else ""
+    except Exception as exc:
+        if isinstance(exc, BillImportError):
+            raise
+        raise UnreadableBillError("Não foi possível ler esse PDF. Verifique se o arquivo está íntegro.") from exc
+    if not page_text.strip():
+        raise UnreadableBillError(
+            "PDF sem texto selecionável (possivelmente digitalizado). Não há OCR; "
+            "informe a tarifa ou os valores da fatura manualmente."
+        )
+    if len(page_text) > MAX_PAGE_TEXT:
+        raise UnreadableBillError("O PDF contém texto demais para uma fatura compatível.")
+    return extract_copel_bill_text(page_text)
