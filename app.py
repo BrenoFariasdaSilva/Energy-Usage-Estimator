@@ -338,3 +338,23 @@ def devices_page() -> None:
         rows = [{"Nome": d.name, "Categoria": d.category, "Potência (W)": d.watts,
                  "Em espera (W)": d.standby_watts, "Observações": d.notes} for d in DEVICES]
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+
+
+def calculator_page() -> None:
+    """Compare the same operating duration across all registered appliances."""
+    header("Comparador rápido", "Compare quanto custaria ligar cada aparelho por 1, 8, 24 ou mais horas.")
+    if not DEVICES:
+        st.info("Cadastre aparelhos primeiro.")
+        return
+    hours, qty, duty = duration_inputs("comparison")
+    rows = []
+    for device in DEVICES:
+        kwh, cost = cost_for_hours(device, hours, TARIFF.rate, quantity=qty, duty_cycle=duty)
+        rows.append({"Aparelho": device.name, "Categoria": device.category,
+                     "Potência (W)": device.watts, "Energia (kWh)": round(kwh, 4), "Custo (R$)": round(cost, 4)})
+    rows.sort(key=lambda item: item["Custo (R$)"], reverse=True)
+    st.caption(f"Tarifa: R$ {format_number(TARIFF.rate, 4)}/kWh. Exemplo de uso por {format_number(hours)} horas, sem espera.")
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    render_chart(cost_by_duration(rows))
+    st.download_button("Baixar comparação (CSV)", rows_csv(rows), "comparacao-aparelhos.csv", "text/csv")
+    st.info("Um chuveiro ligado por 24 horas é apenas um cenário matemático. Para uso realista, utilize 'Cenários'.")
