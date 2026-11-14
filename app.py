@@ -242,3 +242,35 @@ def quick_calc() -> None:
     for column, example_hours in zip(examples, (1, 8, 24)):
         _, example_cost = cost_for_hours(device, example_hours, TARIFF.rate, quantity=quantity, duty_cycle=duty)
         column.metric(f"{example_hours} {'hora' if example_hours == 1 else 'horas'}", format_brl(example_cost))
+
+
+def dashboard_page() -> None:
+    """Configure energy pricing and summarize saved scenario estimates."""
+    st.markdown(
+        """<div class="eue-hero">
+        <div class="eue-eyebrow">ENERGY LEARNING WORKSPACE</div>
+        <h1>Energy Usage Estimator</h1>
+        <p>Explore custos de energia, compare aparelhos e planeje rotinas de consumo.
+        Seus aparelhos, cenários e preferências permanecem salvos localmente em JSON.</p>
+        </div>""", unsafe_allow_html=True,
+    )
+    a, b, c = st.columns(3)
+    a.metric("Aparelhos cadastrados", len(DEVICES))
+    b.metric("Cenários salvos", len(SCENARIOS))
+    c.metric("Tarifa atual", f"R$ {format_number(TARIFF.rate, 4)}/kWh")
+    tariff_form()
+    st.divider()
+    quick_calc()
+    st.divider()
+    st.subheader("Resumo dos cenários salvos")
+    if not SCENARIOS:
+        st.info("Nenhum cenário criado. Acesse 'Cenários' para combinar aparelhos e horários de uso.")
+        return
+    rows = []
+    for scenario in SCENARIOS:
+        summary = totals(estimate_scenario(scenario, DEVICES, TARIFF.rate))
+        rows.append({"Cenário": scenario.name, "Aparelhos": len(scenario.items),
+                     "kWh / 30 dias": round(summary["monthly_kwh"], 3),
+                     "R$ / 30 dias": round(summary["monthly_cost"], 2)})
+    st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.caption("Um mês equivale a 30 dias; uso em dias da semana é convertido por média de 30/7 semanas.")
