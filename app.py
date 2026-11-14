@@ -140,3 +140,54 @@ def copel_pdf_import() -> None:
                 st.session_state["tariff_mode_choice"] = mode
 
             save_or_warn(persist, "Tarifa da fatura Copel salva localmente. Os cenários foram recalculados.")
+
+
+def tariff_form() -> None:
+    """Direct rate, bill-average rate, or imported Copel PDF with user confirmation."""
+    st.subheader("Tarifa da energia")
+    copel_pdf_import()
+    mode = st.radio(
+        "Como deseja informar o custo da energia?",
+        options=("direct", "bill"),
+        format_func=lambda value: "Inserir valor por kWh" if value == "direct" else "Calcular a partir da fatura",
+        index=0 if TARIFF.mode == "direct" else 1,
+        horizontal=True,
+        key="tariff_mode_choice",
+    )
+    with st.form("tariff_form"):
+        if mode == "direct":
+            direct = st.number_input(
+                "Preço de 1 kWh (R$)", min_value=0.0, max_value=1000.0,
+                value=float(TARIFF.direct_rate), step=0.01, format="%.6f",
+                help="Valor padrão (sem dados salvos): R$ 1,00/kWh. Não confundir kWh com kW.",
+            )
+            amount = TARIFF.bill_amount
+            kwh = TARIFF.bill_kwh
+        else:
+            left, right = st.columns(2)
+            with left:
+                amount = st.number_input(
+                    "Valor total da fatura (R$)", min_value=0.0, max_value=10_000_000.0,
+                    value=float(TARIFF.bill_amount), step=10.0, format="%.2f",
+                )
+            with right:
+                kwh = st.number_input(
+                    "Consumo mostrado na fatura (kWh)", min_value=0.0, max_value=10_000_000.0,
+                    value=float(TARIFF.bill_kwh), step=10.0, format="%.2f",
+                )
+            direct = TARIFF.direct_rate
+            if kwh > 0:
+                st.info(f"Tarifa média estimada da fatura: **R$ {format_number(amount / kwh, 6)}/kWh**")
+            else:
+                st.warning("Informe um consumo maior que zero para calcular a tarifa.")
+        submitted = st.form_submit_button("Salvar tarifa", type="primary", use_container_width=True)
+    if submitted:
+        save_or_warn(lambda: STORE.save_tariff(Tariff(mode, float(direct), float(amount), float(kwh))),
+                     "Tarifa salva nos arquivos locais.")
+    if TARIFF.source == "copel_pdf":
+        st.caption(f"Tarifa salva a partir de PDF da Copel"
+                   f"{f' — referência {TARIFF.bill_reference}' if TARIFF.bill_reference else ''}.")
+    st.caption(
+        "A fatura total ÷ kWh resulta em uma **tarifa média efetiva**, não necessariamente no preço marginal "
+        "do próximo kWh. Pode incluir iluminação pública, impostos, custos fixos, descontos e ajustes."
+    )
