@@ -203,3 +203,23 @@ def test_non_copel_pdf_rejected_without_changing_settings(monkeypatch, tmp_path)
     fake = show_page(monkeypatch, tmp_path, upload=b"%PDF-1.7\ninvalid", apply=True)
     assert any(kind == "error" for kind, _ in fake.messages)
     assert not (tmp_path / "settings.json").exists()
+
+
+def test_theme_switch_persists_to_settings_json(monkeypatch, tmp_path) -> None:
+    show_page(monkeypatch, tmp_path, page="Aparelhos", theme="dark")
+    store = JsonStore(tmp_path)
+    assert store.load_theme() == "dark"
+    assert store.load_tariff().rate == 1.0
+    assert show_page(monkeypatch, tmp_path, page="Dados e backups").page == "Dados e backups"
+    assert store.load_theme() == "dark"
+
+
+def test_manual_save_button_creates_checkpoint(monkeypatch, tmp_path) -> None:
+    with pytest.raises(RerunRequested):
+        show_page(monkeypatch, tmp_path, page="Dados e backups", manual=True)
+    store = JsonStore(tmp_path)
+    assert len(list((tmp_path / "backups").glob("manual-*.json"))) == 1
+    assert store.load_theme() == "light"
+    assert (tmp_path / "settings.json").exists()
+    assert (tmp_path / "devices.json").exists()
+    assert (tmp_path / "scenarios.json").exists()
