@@ -45,3 +45,30 @@ def install_if_needed(*, development: bool = False) -> Path:
         checked_run(command, label="Instalando dependências")
         STAMP.write_text(fingerprint, encoding="utf-8")
     return python
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Dispatch installation, local web dashboard or automated test suite."""
+    parser = argparse.ArgumentParser(description="Instalação e execução do Energy Usage Estimator")
+    parser.add_argument("action", choices=("run", "install", "test", "diagnostics"), nargs="?", default="run")
+    args = parser.parse_args(argv)
+    try:
+        python = install_if_needed(development=args.action == "test")
+        if args.action == "install":
+            print("Instalação concluída.")
+            return 0
+        if args.action == "run":
+            command = [str(python), "-m", "streamlit", "run", "app.py", "--server.address=127.0.0.1"]
+        elif args.action == "test":
+            command = [str(python), "-m", "pytest", "-q"]
+        else:
+            command = [str(python), "main.py", "diagnostics"]
+        return subprocess.run(command, cwd=ROOT, check=False).returncode
+    except (OSError, subprocess.CalledProcessError, RuntimeError) as exc:
+        print(f"Falha: {exc}", file=sys.stderr)
+        print("Verifique Python, acesso à internet para instalar pacotes e permissões de escrita.", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
