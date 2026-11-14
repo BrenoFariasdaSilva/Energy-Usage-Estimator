@@ -1,0 +1,125 @@
+{
+  "app": "energy-usage-estimator",
+  "schema_version": 1,
+  "exported_at_utc": "2026-11-14T15:00:00+00:00",
+  "devices": [
+    {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "PC desktop",
+      "category": "Informática",
+      "watts": 350,
+      "standby_watts": 2,
+      "notes": "Exemplo fictício: substitua pela potência média medida."
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Ventilador",
+      "category": "Climatização",
+      "watts": 60,
+      "standby_watts": 0,
+      "notes": "Exemplo fictício."
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "Chuveiro elétrico",
+      "category": "Banheiro",
+      "watts": 5500,
+      "standby_watts": 0,
+      "notes": "Exemplo fictício."
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Televisão LED",
+      "category": "Entretenimento",
+      "watts": 100,
+      "standby_watts": 1,
+      "notes": "Exemplo fictício."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "name": "Rotina atual",
+      "description": "Exemplo: PC 5 h/dia nos dias úteis, ventilador 8 h/dia, banho 15 min/dia.",
+      "items": [
+        {
+          "device_id": "11111111-1111-4111-8111-111111111111",
+          "hours_per_day": 5,
+          "days_per_week": 5,
+          "quantity": 1,
+          "duty_cycle": 0.65,
+          "include_standby": true
+        },
+        {
+          "device_id": "22222222-2222-4222-8222-222222222222",
+          "hours_per_day": 8,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": false
+        },
+        {
+          "device_id": "33333333-3333-4333-8333-333333333333",
+          "hours_per_day": 0.25,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": false
+        },
+        {
+          "device_id": "44444444-4444-4444-8444-444444444444",
+          "hours_per_day": 4,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": true
+        }
+      ]
+    },
+    {
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "name": "Rotina econômica",
+      "description": "Exemplo: menos uso de PC e ventilador, banho de 10 min e TV de 2 h.",
+      "items": [
+        {
+          "device_id": "11111111-1111-4111-8111-111111111111",
+          "hours_per_day": 3,
+          "days_per_week": 5,
+          "quantity": 1,
+          "duty_cycle": 0.65,
+          "include_standby": true
+        },
+        {
+          "device_id": "22222222-2222-4222-8222-222222222222",
+          "hours_per_day": 5,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": false
+        },
+        {
+          "device_id": "33333333-3333-4333-8333-333333333333",
+          "hours_per_day": 0.16666666666666666,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": false
+        },
+        {
+          "device_id": "44444444-4444-4444-8444-444444444444",
+          "hours_per_day": 2,
+          "days_per_week": 7,
+          "quantity": 1,
+          "duty_cycle": 1,
+          "include_standby": true
+        }
+      ]
+    }
+  ],
+  "tariff": {
+    "mode": "direct",
+    "direct_rate": 1.0,
+    "bill_amount": 0,
+    "bill_kwh": 0
+  }
+}
