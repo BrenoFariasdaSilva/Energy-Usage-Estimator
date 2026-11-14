@@ -55,3 +55,33 @@ def test_quantity_and_average_load(fan: Device) -> None:
     assert energy_kwh(fan.watts, 8, quantity=3, duty_cycle=0.5) == pytest.approx(0.72)
     result = estimate_item(fan, UsageItem(fan.id, 8, 7, 3, 0.5), 1)
     assert result.weekly_kwh == pytest.approx(3 * 0.5 * 3.36)
+
+
+def test_standby_only_other_hours(fan: Device) -> None:
+    """Standby runs in all non-active hours, even on days with zero scheduled use."""
+    item = UsageItem(fan.id, 8, 5, include_standby=True)
+    result = estimate_item(fan, item, 1)
+    assert result.active_weekly_kwh == pytest.approx(2.4)
+    assert result.standby_weekly_kwh == pytest.approx(2 * (168 - 40) / 1000)
+    assert result.weekly_kwh == pytest.approx(2.656)
+
+
+def test_full_week_active_has_no_standby(fan: Device) -> None:
+    """A continuously active appliance cannot also be on standby."""
+    result = estimate_item(fan, UsageItem(fan.id, 24, 7, include_standby=True), 1)
+    assert result.standby_weekly_kwh == 0
+    assert result.weekly_kwh == pytest.approx(60 * 168 / 1000)
+
+
+def test_zero_active_load_with_standby(fan: Device) -> None:
+    """An inactive plugged-in device can still consume standby energy."""
+    result = estimate_item(fan, UsageItem(fan.id, 0, 1, include_standby=True), 1)
+    assert result.weekly_kwh == pytest.approx(2 * 168 / 1000)
+
+
+def test_scenario_sum_and_missing_devices(fan: Device, fan_scenario: Scenario) -> None:
+    """Scenario aggregation fails explicitly when a saved device was removed."""
+    estimates = estimate_scenario(fan_scenario, [fan], 0.85)
+    assert totals(estimates)["monthly_cost"] == pytest.approx(12.24)
+    with pytest.raises(ValueError, match="inexistente"):
+        estimate_scenario(fan_scenario, [], 0.85)
