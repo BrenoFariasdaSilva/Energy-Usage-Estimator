@@ -15,7 +15,7 @@ from energy_estimator.ui_theme import THEMES, style_chart, theme_css
 def test_old_settings_without_theme_remain_supported(tmp_path: Path) -> None:
     store = JsonStore(tmp_path)
     store.save_tariff(Tariff(direct_rate=0.87))
-    assert store.load_theme() == "light"
+    assert store.load_theme() == "dark"
     assert "appearance" not in json.loads((tmp_path / "settings.json").read_text())
     assert store.load_tariff().rate == 0.87
 
@@ -73,7 +73,7 @@ def test_manual_save_creates_all_json_and_dated_backup(tmp_path: Path) -> None:
     snapshot = json.loads(checkpoint.read_text())
     assert snapshot["app"] == "energy-usage-estimator"
     assert snapshot["tariff"]["direct_rate"] == 1.0
-    assert snapshot["appearance"] == "light"
+    assert snapshot["appearance"] == "dark"
     assert snapshot["devices"] == []
     assert snapshot["scenarios"] == []
     assert (another := store.save_now()) != checkpoint
@@ -109,13 +109,13 @@ def test_export_and_restore_roundtrip_theme(tmp_path: Path) -> None:
     assert destination.load_tariff().rate == 1.5
 
 
-def test_restore_legacy_backup_without_theme_uses_light(tmp_path: Path) -> None:
+def test_restore_legacy_backup_without_theme_uses_dark(tmp_path: Path) -> None:
     store = JsonStore(tmp_path)
     store.save_theme("dark")
     backup = json.loads(store.backup_bytes())
     del backup["appearance"]
     store.restore_backup(json.dumps(backup).encode("utf-8"))
-    assert store.load_theme() == "light"
+    assert store.load_theme() == "dark"
 
 
 def test_restore_invalid_theme_never_changes_data(tmp_path: Path) -> None:

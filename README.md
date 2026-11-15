@@ -284,7 +284,7 @@ Data belongs to the machine running Streamlit, **not browser storage**. The appl
 - **Automatic:** Confirmed changes to devices, scenarios, tariffs and themes are immediately saved to JSON.
 - **Manual:** **Dados e backups → Salvar dados agora** saves all JSON files and creates a timestamped local backup.
 - **Export:** **Baixar backup completo (JSON)** downloads a portable backup.
-- **Restore:** Validates imported JSON, backs up existing data and restores after confirmation. Older backups default to the light theme.
+- **Restore:** Validates imported JSON, backs up existing data and restores after confirmation. Older backups default to the dark theme.
 - **Protection:** Invalid files are not silently overwritten. Unsubmitted form changes are not saved.
 
 The light/dark switch uses application CSS; some native Streamlit components may retain their own appearance.

@@ -18,7 +18,7 @@ APP_ID = "energy-usage-estimator"
 _STORE_LOCK = threading.RLock()
 MAX_IMPORT_BYTES = 5 * 1024 * 1024
 VALID_THEMES = frozenset({"light", "dark"})
-DEFAULT_THEME = "light"
+DEFAULT_THEME = "dark"
 
 
 class StorageError(RuntimeError):
@@ -163,7 +163,7 @@ class JsonStore:
                 raise StorageError(f"Tarifa inválida em {self._path('settings')}: {exc}") from exc
 
     def load_theme(self) -> str:
-        """Read optional appearance preference from settings.json (legacy files default to light)."""
+        """Read optional appearance preference from settings.json (legacy files default to dark)."""
         with _STORE_LOCK:
             document = self._read("settings")
             theme = document.get("appearance", DEFAULT_THEME) if document is not None else DEFAULT_THEME

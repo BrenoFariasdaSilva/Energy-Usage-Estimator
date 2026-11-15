@@ -18,9 +18,9 @@ test('pages config loads the original Python app with a persistent IDBFS mount',
     'https://example.github.io/eue/python/src/energy_estimator/bill_import.py');
   assert.equal(options.streamlitConfig['browser.gatherUsageStats'], false);
   assert.equal(options.streamlitConfig['server.maxUploadSize'], 10);
-  assert.equal(options.streamlitConfig['theme.base'], 'light');
-  assert.equal(options.streamlitConfig['theme.backgroundColor'], '#F5F9FE');
-  assert.equal(options.streamlitConfig['theme.textColor'], '#14283D');
+  assert.equal(options.streamlitConfig['theme.base'], 'dark');
+  assert.equal(options.streamlitConfig['theme.backgroundColor'], '#0B121C');
+  assert.equal(options.streamlitConfig['theme.textColor'], '#F1F7FF');
   assert.match(STLite_CDN, /@stlite\/browser@1\.11\.0\/build\/stlite\.js/);
 });
 

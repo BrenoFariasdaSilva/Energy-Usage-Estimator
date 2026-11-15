@@ -39,13 +39,12 @@ export function stliteOptions(names, base) {
       'client.toolbarMode': 'viewer',
       'server.maxUploadSize': 10,
       // Stlite is not launched through the repository's .streamlit/config.toml.
-      // Without these options, the native Streamlit theme follows OS preference
-      // (typically dark), even when the app sidebar says "Claro".
-      'theme.base': 'light',
-      'theme.primaryColor': '#087FC4',
-      'theme.backgroundColor': '#F5F9FE',
-      'theme.secondaryBackgroundColor': '#FFFFFF',
-      'theme.textColor': '#14283D',
+      // Start from the app's dark default rather than the browser/OS preference.
+      'theme.base': 'dark',
+      'theme.primaryColor': '#32A9EF',
+      'theme.backgroundColor': '#0B121C',
+      'theme.secondaryBackgroundColor': '#142333',
+      'theme.textColor': '#F1F7FF',
     },
   };
 }

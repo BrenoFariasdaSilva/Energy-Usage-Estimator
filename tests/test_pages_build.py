@@ -131,7 +131,7 @@ class GitHubPagesBuildTests(unittest.TestCase):
         js = (ROOT / "pages/boot.js").read_text(encoding="utf-8")
         self.assertIn("@stlite/browser@1.11.0", html)
         self.assertIn('href="./app-theme.css"', html)
-        self.assertIn("'theme.base': 'light'", js)
+        self.assertIn("'theme.base': 'dark'", js)
         self.assertIn("startAppearanceSync", js)
         css = build_pages.pages_theme_stylesheet()
         self.assertIn(':root[data-eue-theme="dark"]', css)

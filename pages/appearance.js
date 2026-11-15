@@ -40,8 +40,8 @@ export function detectAppearance(doc) {
 
 export function startAppearanceSync(doc, root) {
   if (!doc?.documentElement || !root) throw new Error('Página sem contêiner para sincronização do tema.');
-  // Start with the actual light palette rather than a native dark flash.
-  doc.documentElement.dataset.eueTheme = 'light';
+  // Start with the app's dark default rather than a native light flash.
+  doc.documentElement.dataset.eueTheme = 'dark';
   const sync = () => {
     const next = detectAppearance(doc);
     if (next && doc.documentElement.dataset.eueTheme !== next) {

@@ -232,7 +232,7 @@ def test_manual_save_button_creates_checkpoint(monkeypatch, tmp_path) -> None:
         show_page(monkeypatch, tmp_path, page="Dados e backups", manual=True)
     store = JsonStore(tmp_path)
     assert len(list((tmp_path / "backups").glob("manual-*.json"))) == 1
-    assert store.load_theme() == "light"
+    assert store.load_theme() == "dark"
     assert (tmp_path / "settings.json").exists()
     assert (tmp_path / "devices.json").exists()
     assert (tmp_path / "scenarios.json").exists()

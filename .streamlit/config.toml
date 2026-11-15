@@ -4,11 +4,11 @@ gatherUsageStats = false
 # Native theme for components whose presentation is not controlled by the
 # in-app light/dark switch (e.g. dataframes and third-party widgets).
 [theme]
-base = "light"
-primaryColor = "#087FC4"
-backgroundColor = "#F5F9FE"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#14283D"
+base = "dark"
+primaryColor = "#32A9EF"
+backgroundColor = "#0B121C"
+secondaryBackgroundColor = "#142333"
+textColor = "#F1F7FF"
 
 # Streamlit's built-in appearance menu remains available. The application also
 # has its own persistent theme switch in the sidebar (CSS for a local session).
