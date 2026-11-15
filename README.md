@@ -30,7 +30,6 @@ Estimate how much your computer, fan, shower, air conditioner, lights, or other 
 ![GitHub Contributors](https://img.shields.io/github/contributors/BrenoFariasdaSilva/Energy-Usage-Estimator)
 ![GitHub Created At](https://img.shields.io/github/created-at/BrenoFariasdaSilva/Energy-Usage-Estimator)
 ![wakatime](https://wakatime.com/badge/github/BrenoFariasdaSilva/Energy-Usage-Estimator.svg)
-[![GitHub Repository Size](https://img.shields.io/github/repo-size/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator)
 [![Open Issues](https://img.shields.io/github/issues/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/issues)
 [![Closed Issues](https://img.shields.io/github/issues-closed/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/issues?q=is%3Aissue+is%3Aclosed)
 [![Open Pull Requests](https://img.shields.io/github/issues-pr/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/pulls)
