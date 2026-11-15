@@ -247,15 +247,25 @@ _THEME_RULES = """
         border-radius: .6rem;
     }
     [data-testid="stApp"] [data-testid="stSegmentedControl"] button,
+    [data-testid="stApp"] [data-testid="stButtonGroup"] [role="radio"],
     [data-testid="stApp"] [data-testid="stTabs"] [role="tab"] {
         color: var(--eue-text) !important; background-color: var(--eue-surface) !important;
         border-color: var(--eue-border) !important;
     }
+    [data-testid="stApp"] [data-testid="stButtonGroup"] [role="radio"] * {
+        color: var(--eue-text) !important;
+        -webkit-text-fill-color: var(--eue-text) !important;
+    }
     [data-testid="stApp"] [data-testid="stSegmentedControl"] button[aria-checked="true"],
     [data-testid="stApp"] [data-testid="stSegmentedControl"] button[aria-pressed="true"],
+    [data-testid="stApp"] [data-testid="stButtonGroup"] [role="radio"][aria-checked="true"],
     [data-testid="stApp"] [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
         background-color: var(--eue-tint) !important; color: var(--eue-accent) !important;
         border-color: var(--eue-accent) !important;
+    }
+    [data-testid="stApp"] [data-testid="stButtonGroup"] [role="radio"][aria-checked="true"] * {
+        color: var(--eue-accent) !important;
+        -webkit-text-fill-color: var(--eue-accent) !important;
     }
     [data-testid="stApp"] [data-testid="stSlider"] {accent-color: var(--eue-accent);}
     [data-testid="stApp"] input[type="checkbox"],

@@ -202,6 +202,8 @@ def test_native_streamlit_widgets_use_matching_theme_contrast(theme: str) -> Non
     assert f'--eue-border: {colors.border};' in css
     assert 'background: var(--eue-surface-alt) !important;' in css
     assert 'color: var(--eue-text) !important;' in css
+    assert '[data-testid="stButtonGroup"] [role="radio"]' in css
+    assert '[role="radio"][aria-checked="true"]' in css
 
 
 def test_both_themes_use_blue_accents() -> None:
