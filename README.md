@@ -34,10 +34,33 @@ Estimate how much your computer, fan, shower, air conditioner, lights, or other 
 </div>
 
 <div align="center">
-  
-![RepoBeats Statistics](https://repobeats.axiom.co/api/embed/2a14dabe65b2dc85fb2636c1752979b5a37f10b9.svg "Repobeats analytics image")
+
+![GitHub Code Size in Bytes](https://img.shields.io/github/languages/code-size/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Commits](https://img.shields.io/github/commit-activity/t/BrenoFariasdaSilva/Energy-Usage-Estimator/main)
+![GitHub Last Commit](https://img.shields.io/github/last-commit/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Forks](https://img.shields.io/github/forks/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Language Count](https://img.shields.io/github/languages/count/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub License](https://img.shields.io/github/license/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Stars](https://img.shields.io/github/stars/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Contributors](https://img.shields.io/github/contributors/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![GitHub Created At](https://img.shields.io/github/created-at/BrenoFariasdaSilva/Energy-Usage-Estimator)
+![wakatime](https://wakatime.com/badge/github/BrenoFariasdaSilva/Energy-Usage-Estimator.svg)
+[![GitHub Repository Size](https://img.shields.io/github/repo-size/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator)
+[![Open Issues](https://img.shields.io/github/issues/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/issues)
+[![Closed Issues](https://img.shields.io/github/issues-closed/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/issues?q=is%3Aissue+is%3Aclosed)
+[![Open Pull Requests](https://img.shields.io/github/issues-pr/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/pulls)
+[![Closed Pull Requests](https://img.shields.io/github/issues-pr-closed/BrenoFariasdaSilva/Energy-Usage-Estimator)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/pulls?q=is%3Apr+is%3Aclosed)
+[![Monthly Commits](https://img.shields.io/github/commit-activity/m/BrenoFariasdaSilva/Energy-Usage-Estimator/main)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/commits)
+[![Merged PRs](https://img.shields.io/github/issues-search/BrenoFariasdaSilva/Energy-Usage-Estimator?query=is%3Apr%20is%3Amerged&label=merged%20PRs&color=blue)](https://github.com/BrenoFariasdaSilva/Energy-Usage-Estimator/pulls?q=is%3Apr+is%3Amerged)
+![Language](https://img.shields.io/badge/Language-Python-3776AB)
+![UI](https://img.shields.io/badge/UI-Streamlit-ff4b4b)
+![Charts](https://img.shields.io/badge/Charts-Plotly-3F4F75)
+![Input](https://img.shields.io/badge/Input-Copel%20PDF-45966c)
+
+![Repobeats Statistics](https://repobeats.axiom.co/api/embed/2a14dabe65b2dc85fb2636c1752979b5a37f10b9.svg)
 
 </div>
+
 
 ## Table of Contents
 - [Energy-Usage-Estimator. ](#energy-usage-estimator-)
