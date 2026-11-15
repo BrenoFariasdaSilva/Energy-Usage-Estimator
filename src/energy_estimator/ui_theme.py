@@ -216,6 +216,21 @@ _THEME_RULES = """
         caret-color: var(--eue-text) !important;
         color-scheme: var(--eue-color-scheme);
     }
+    /* Streamlit 1.50+ replaced the BaseWeb number field with this container.
+       Its default unfocused border is too faint on the light palette. */
+    [data-testid="stApp"] [data-testid="stNumberInputContainer"] {
+        background-color: var(--eue-surface) !important;
+        border: 1px solid var(--eue-border) !important;
+    }
+    [data-testid="stApp"] [data-testid="stNumberInputContainer"]:focus-within {
+        border-color: var(--eue-accent) !important;
+    }
+    [data-testid="stApp"] [data-testid="stNumberInputField"] {
+        background-color: var(--eue-surface) !important;
+        color: var(--eue-text) !important;
+        -webkit-text-fill-color: var(--eue-text) !important;
+        caret-color: var(--eue-text) !important;
+    }
     [data-testid="stApp"] div[data-baseweb="select"] svg {fill: var(--eue-muted);}
     [data-testid="stApp"] [data-testid="stBaseButton-primary"] {
         background-color: var(--eue-accent) !important; color: var(--eue-accent-label) !important;
@@ -334,6 +349,27 @@ _THEME_RULES = """
     [data-testid="stApp"] [data-testid="stFileUploaderFile"] svg[data-testid="stFileUploaderFileIcon"],
     [data-testid="stApp"] [data-testid="stFileUploaderFile"] [data-testid="stFileUploaderFileIcon"] svg *,
     [data-testid="stApp"] [data-testid="stFileUploaderFile"] svg[data-testid="stFileUploaderFileIcon"] * {
+        color: var(--eue-icon-fg) !important;
+    }
+    /* Streamlit 1.50+ renders an uploaded item as a file chip instead of the
+       former stFileUploaderFile tree. Target its stable test IDs, not its
+       generated Emotion classes. */
+    [data-testid="stApp"] [data-testid="stFileChip"] {
+        background-color: var(--eue-surface-alt) !important;
+        color: var(--eue-text) !important;
+    }
+    [data-testid="stApp"] [data-testid="stFileChip"] *,
+    [data-testid="stApp"] [data-testid="stFileChipName"] {
+        color: var(--eue-text) !important;
+        -webkit-text-fill-color: var(--eue-text) !important;
+    }
+    [data-testid="stApp"] [data-testid="stFileChip"] > div:has(> svg) {
+        background-color: var(--eue-icon-bg) !important;
+        color: var(--eue-icon-fg) !important;
+        border-radius: .4rem;
+    }
+    [data-testid="stApp"] [data-testid="stFileChip"] > div:has(> svg) svg,
+    [data-testid="stApp"] [data-testid="stFileChip"] > div:has(> svg) svg * {
         color: var(--eue-icon-fg) !important;
     }
     [data-testid="stApp"] [data-testid="stAlert"] > div,
