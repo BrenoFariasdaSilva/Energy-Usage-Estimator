@@ -231,6 +231,43 @@ _THEME_RULES = """
         -webkit-text-fill-color: var(--eue-text) !important;
         caret-color: var(--eue-text) !important;
     }
+    /* Streamlit 1.50+ also uses separate roots for text inputs and textareas.
+       Without these, a native dark field can remain after switching to light. */
+    [data-testid="stApp"] :is([data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"]) {
+        background-color: var(--eue-surface) !important;
+        border: 1px solid var(--eue-border) !important;
+    }
+    [data-testid="stApp"]
+    :is([data-testid="stTextInputRootElement"], [data-testid="stTextAreaRootElement"]):focus-within {
+        border-color: var(--eue-accent) !important;
+    }
+    [data-testid="stApp"] :is([data-testid="stTextInputField"], [data-testid="stTextAreaRootElement"] textarea) {
+        background-color: var(--eue-surface) !important;
+        color: var(--eue-text) !important;
+        -webkit-text-fill-color: var(--eue-text) !important;
+        caret-color: var(--eue-text) !important;
+    }
+    [data-testid="stApp"]
+    :is([data-testid="stTextInputField"], [data-testid="stTextAreaRootElement"] textarea)::placeholder {
+        color: var(--eue-muted) !important;
+        -webkit-text-fill-color: var(--eue-muted) !important;
+    }
+    [data-testid="stApp"] [data-testid="stSelectbox"] [role="group"] {
+        background-color: var(--eue-surface) !important;
+        border: 1px solid var(--eue-border) !important;
+    }
+    [data-testid="stApp"] [data-testid="stSelectbox"] [role="group"]:focus-within {
+        border-color: var(--eue-accent) !important;
+    }
+    [data-testid="stApp"] [data-testid="stSelectbox"] [role="combobox"] {
+        background-color: var(--eue-surface) !important;
+        color: var(--eue-text) !important;
+        -webkit-text-fill-color: var(--eue-text) !important;
+    }
+    [data-testid="stApp"] [data-testid="stSelectbox"] [role="group"] button,
+    [data-testid="stApp"] [data-testid="stSelectbox"] [role="group"] button svg {
+        color: var(--eue-muted) !important;
+    }
     [data-testid="stApp"] div[data-baseweb="select"] svg {fill: var(--eue-muted);}
     [data-testid="stApp"] [data-testid="stBaseButton-primary"] {
         background-color: var(--eue-accent) !important; color: var(--eue-accent-label) !important;

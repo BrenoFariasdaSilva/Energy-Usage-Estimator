@@ -270,6 +270,18 @@ def test_number_input_has_matching_background_foreground_and_caret() -> None:
     assert 'caret-color: var(--eue-text) !important;' in rule
 
 
+def test_current_streamlit_text_controls_match_the_selected_theme() -> None:
+    """Modern Streamlit roots must not retain the native dark input palette."""
+    css = theme_css("light")
+    assert '[data-testid="stTextInputRootElement"]' in css
+    assert '[data-testid="stTextAreaRootElement"]' in css
+    assert '[data-testid="stTextInputField"]' in css
+    assert '[data-testid="stSelectbox"] [role="group"]' in css
+    assert '[data-testid="stSelectbox"] [role="combobox"]' in css
+    assert 'border: 1px solid var(--eue-border) !important;' in css
+    assert 'background-color: var(--eue-surface) !important;' in css
+
+
 def test_filename_container_cannot_retain_native_light_background() -> None:
     """Streamlit's inner file-details chip must not stay white in dark mode."""
     css = theme_css("dark")
